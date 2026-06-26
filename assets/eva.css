@@ -1677,7 +1677,7 @@ body.eva-fullscreen #wpbody-content {
   position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 320px;
-  gap: 18px;
+  gap: 18px 20px;
   overflow: hidden;
   padding: 20px 24px;
   border: 1px solid var(--eva-border);
@@ -1812,20 +1812,26 @@ body.eva-fullscreen #wpbody-content {
 }
 
 .eva-guide-tabs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
-.eva-guide-tab {
-  display: inline-flex;
-  align-items: center;
+  display: grid;
   gap: 6px;
-  padding: 6px 12px;
+  padding: 10px;
   border: 1px solid var(--eva-border);
   border-radius: var(--eva-radius);
   background: var(--eva-surface);
+  box-shadow: var(--eva-shadow-card);
+}
+
+.eva-guide-tab {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+  width: 100%;
+  min-height: 30px;
+  padding: 0 11px;
+  border: 1px solid transparent;
+  border-radius: var(--eva-radius);
+  background: transparent;
   color: var(--eva-text-sub);
   font-family: inherit;
   font-size: 12.5px;
@@ -1837,9 +1843,9 @@ body.eva-fullscreen #wpbody-content {
 
 .eva-guide-tab:hover,
 .eva-guide-tab.is-active {
-  background: color-mix(in srgb, var(--eva-primary) 10%, transparent);
+  background: color-mix(in srgb, var(--eva-primary) 9%, var(--eva-surface));
   color: var(--eva-primary);
-  border-color: var(--eva-primary);
+  border-color: color-mix(in srgb, var(--eva-primary) 22%, transparent);
 }
 
 .eva-guide-tab i {
@@ -2343,12 +2349,13 @@ body.eva-fullscreen #wpbody-content {
 
 .eva-f-input {
   width: 100%;
-  padding: 5px 11px;
+  height: 26px;
+  padding: 2px 9px;
   border: 1px solid var(--eva-border);
   border-radius: var(--eva-radius);
   background: var(--eva-soft);
   color: var(--eva-text);
-  font-size: 13.5px;
+  font-size: 12.5px;
   font-family: inherit;
   line-height: 1.5;
   transition: border-color var(--eva-ease), box-shadow var(--eva-ease), background var(--eva-ease);
@@ -2371,6 +2378,7 @@ body.eva-fullscreen #wpbody-content {
 }
 
 .eva-f-textarea {
+  height: auto;
   resize: vertical;
   min-height: 84px;
   line-height: 1.6;
@@ -2383,8 +2391,8 @@ body.eva-fullscreen #wpbody-content {
 .eva-f-switch {
   position: relative;
   flex: none;
-  width: 42px;
-  height: 23px;
+  width: 44px;
+  height: 26px;
   padding: 0;
   border: none;
   border-radius: var(--eva-radius-full);
@@ -2395,10 +2403,10 @@ body.eva-fullscreen #wpbody-content {
 
 .eva-f-switch-dot {
   position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 19px;
-  height: 19px;
+  top: 4px;
+  left: 4px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   background: #fff;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
@@ -2410,7 +2418,7 @@ body.eva-fullscreen #wpbody-content {
 }
 
 .eva-f-switch.is-on .eva-f-switch-dot {
-  transform: translateX(19px);
+  transform: translateX(18px);
 }
 
 /* 脏状态保存坞（有未保存更改才出现）：表单底部静态条，右对齐，保存 + 恢复默认 */
@@ -2428,8 +2436,8 @@ body.eva-fullscreen #wpbody-content {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  height: 32px;
-  padding: 0 14px;
+  height: 26px;
+  padding: 0 11px;
   border: 0;
   border-radius: var(--eva-radius);
   background: var(--eva-primary);
@@ -2450,7 +2458,7 @@ body.eva-fullscreen #wpbody-content {
 }
 
 .eva-savefab i {
-  font-size: 15px;
+  font-size: 14px;
 }
 
 .eva-reset-wrap {
@@ -2460,14 +2468,14 @@ body.eva-fullscreen #wpbody-content {
 .eva-reset-btn {
   display: grid;
   place-items: center;
-  width: 32px;
-  height: 32px;
+  width: 26px;
+  height: 26px;
   padding: 0;
   border: 1px solid var(--eva-border);
   border-radius: var(--eva-radius);
   background: var(--eva-surface);
   color: var(--eva-text-sub);
-  font-size: 15px;
+  font-size: 14px;
   cursor: pointer;
   transition: background var(--eva-ease), color var(--eva-ease), border-color var(--eva-ease);
 }
@@ -2759,14 +2767,15 @@ body.eva-fullscreen #wpbody-content {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 4px 11px;
+  min-height: 26px;
+  padding: 2px 10px;
   border: 1px solid var(--eva-primary);
   border-radius: var(--eva-radius);
   background: var(--eva-primary);
   color: var(--eva-on-primary);
-  font-size: 13px;
+  font-size: 12.5px;
   font-family: inherit;
-  line-height: 1.6;
+  line-height: 1.4;
   cursor: pointer;
   transition: background var(--eva-ease), border-color var(--eva-ease), color var(--eva-ease);
 }

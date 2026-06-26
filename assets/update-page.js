@@ -312,7 +312,7 @@
       },
       template: TEMPLATE
     });
-    // 复用 eva-select 美化下拉库（Libs/eva-select），替代原生 select。
+    // 复用 eva-select 美化下拉库（Libraries/Eva-select），替代原生 select。
     if (window.EvaUI && window.EvaUI.Select) {
       app.component('eva-select', window.EvaUI.Select);
     }

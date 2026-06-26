@@ -8,16 +8,16 @@
 ## 0. 背景与定位
 
 - 项目：Lentasy 主题 + Eva Framework 插件。
-- Eva 的 UI 库统一放在 `wp-content/plugins/Eva framework/Libs/<库名>/`：**一库一文件夹，含同名 `.js` + `.css`**，由 PHP 的 `Eva::lib_assets()` 自动扫描入队，**无需改 PHP**。
-- 现有同类可对照风格：`Libs/eva-select/`（唯一完整实现，对照其 js/css 写法）。
+- Eva 的 UI 库统一放在 `wp-content/plugins/Eva framework/Libraries/<库名>/`：**一库一文件夹，含同名 `.js` + `.css`**，由 PHP 的 `Eva::lib_assets()` 自动扫描入队，**无需改 PHP**。
+- 现有同类可对照风格：`Libraries/Eva-select/`（唯一完整实现，对照其 js/css 写法）。
 - 本库定位：自写正则 tokenizer 的轻量只读高亮，**比引 Prism 更简约、零依赖、与 `--eva-*` 令牌天然统一**。
 
 ## 1. 交付物
 
 > 命名约定：库文件夹/文件名不带 `eva-` 前缀（如 `code/code.js`），但组件标签保留 `eva-` 前缀 `<eva-code>`（避免与 HTML 原生标签如 `<code>` 冲突）。
 
-1. 新增 `Libs/code/code.js`（骨架已建，待实现）
-2. 新增 `Libs/code/code.css`（骨架已建，待实现）
+1. 新增 `Libraries/Code/Code.js`（骨架已建，待实现）
+2. 新增 `Libraries/Code/Code.css`（骨架已建，待实现）
 3. 修改 `assets/eva-app.js`：在现有 `eva-select` / `eva-modal` 的注册处旁追加一行
 
 ```js

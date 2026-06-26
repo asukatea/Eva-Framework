@@ -152,7 +152,7 @@ class Admin
         wp_enqueue_style('eva-flag-icons', 'https://cdn.jsdelivr.net/npm/flag-icons@7/css/flag-icons.min.css', [], '7');
         wp_enqueue_style('eva-framework', EVA_FW_URL . 'assets/eva.css', [], \Eva::asset_ver('assets/eva.css'));
 
-        // UI 库（Libs/<name>/，含同名 js/css）：先于字段与外壳加载，逐个累积为 eva-app 的依赖。
+        // UI 库（Libraries/<name>/，含同名 js/css）：先于字段与外壳加载，逐个累积为 eva-app 的依赖。
         $lib_deps = ['eva-vue3'];
         foreach (\Eva::lib_assets() as $lib_name => $lib) {
             if ($lib['css']) {

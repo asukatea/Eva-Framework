@@ -201,7 +201,7 @@ class Standalone
         echo '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flag-icons@7/css/flag-icons.min.css">';
         echo '<link rel="stylesheet" href="' . esc_url(includes_url('css/dashicons.min.css')) . '?ver=' . EVA_FW_VERSION . '">';
         echo '<link rel="stylesheet" href="' . esc_url($css) . '">';
-        // UI 库 CSS（Libs/<name>/）。
+        // UI 库 CSS（Libraries/<name>/）。
         foreach (\Eva::lib_assets() as $lib_name => $lib) {
             if ($lib['css']) {
                 echo '<link rel="stylesheet" href="' . esc_url($lib['css'] . '?ver=' . \Eva::asset_ver($lib['cssRel'])) . '">';
@@ -214,7 +214,7 @@ class Standalone
         echo '<div id="eva-app" class="eva-root"><div class="eva-boot">Eva Framework 正在加载…</div></div>';
         echo '<script>window.EvaFW = ' . $json . ';</script>';
         echo '<script src="' . esc_url($vue) . '"></script>';
-        // UI 库脚本（Libs/<name>/，先于字段与外壳）。
+        // UI 库脚本（Libraries/<name>/，先于字段与外壳）。
         foreach (\Eva::lib_assets() as $lib_name => $lib) {
             if ($lib['js']) {
                 echo '<script src="' . esc_url($lib['js'] . '?ver=' . \Eva::asset_ver($lib['jsRel'])) . '"></script>';

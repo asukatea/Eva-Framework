@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       Eva Framework
  * Description:       Eva —— 轻量、现代、好看的 WordPress 后台设置框架（CSF 替代方案）。
- * Version:           0.1.0
+ * Version:           1.3.0
  * Requires at least: 6.0
  * Requires PHP:      8.0
  * Author:            青柠
@@ -20,7 +20,7 @@ if (defined('EVA_FW_LOADED')) {
 }
 define('EVA_FW_LOADED', true);
 
-define('EVA_FW_VERSION', '0.1.0');
+define('EVA_FW_VERSION', '1.3.0');
 define('EVA_FW_FILE', __FILE__);
 define('EVA_FW_DIR', plugin_dir_path(__FILE__));
 define('EVA_FW_URL', plugin_dir_url(__FILE__));

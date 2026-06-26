@@ -1,0 +1,19 @@
+*.log
+.DS_Store
+Thumbs.db
+
+# Local editor and system files
+.idea/
+.vscode/
+
+# Dependency and build output folders
+node_modules/
+vendor/
+dist/
+build/
+
+# Environment and local secrets
+.env
+.env.*
+*.key
+*.pem

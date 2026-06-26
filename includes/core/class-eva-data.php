@@ -107,7 +107,9 @@ class Data
                 $type = isset($field['type']) ? $field['type'] : 'text';
                 // 前端没提交该字段时取 null，交由 sanitize_field 决定其空值表现。
                 $val  = array_key_exists($id, $raw) ? $raw[$id] : null;
-                $clean[$id] = self::sanitize_field($type, $val);
+                $clean[$id] = ($type === 'accordion')
+                    ? self::sanitize_accordion($field, $val)
+                    : self::sanitize_field($type, $val);
             }
         }
         return $clean;
@@ -116,7 +118,7 @@ class Data
     /**
      * 按字段类型清洗单个值。
      *
-     * 注意（迁移须知）：当前仅覆盖 switcher / textarea / select / text 四类，其余类型都会落到
+     * 注意（迁移须知）：当前仅覆盖 switcher / textarea / select / color / icon / upload / accordion / text 八类，其余类型都会落到
      * default 分支被强制转成字符串。对「值为数组」的字段（group/repeater/checkbox/gallery 等），
      * 这会破坏数据——迁移此类字段前必须在此补对应分支。
      *
@@ -133,11 +135,151 @@ class Data
             case 'textarea':
                 // 多行文本：保留换行的同时去除危险标签。
                 return sanitize_textarea_field((string) $val);
+            case 'color':
+                return self::sanitize_color($val);
+            case 'icon':
+                return self::sanitize_icon($val);
+            case 'upload':
+                return self::sanitize_upload($val);
             case 'select':
             case 'text':
             default:
                 // 其余（含未识别类型）按单行文本清洗——数组型字段在此会被损坏，详见上方注意。
                 return sanitize_text_field((string) $val);
         }
+    }
+
+    /**
+     * 清洗颜色值：仅允许 #RGB/#RRGGBB 或 rgb()/rgba() 字符串，失败返回空。
+     *
+     * @param mixed $val 原始颜色值。
+     * @return string    规范化后的颜色字符串。
+     */
+    public static function sanitize_color($val)
+    {
+        $value = trim((string) $val);
+        if ($value === '') {
+            return '';
+        }
+
+        if (preg_match('/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/', $value)) {
+            return strtoupper($value);
+        }
+
+        if (preg_match('/^rgba?\(\s*([0-9.]+)\s*,\s*([0-9.]+)\s*,\s*([0-9.]+)(?:\s*,\s*([0-9.]+))?\s*\)$/i', $value, $m)) {
+            $r = max(0, min(255, (int) round((float) $m[1])));
+            $g = max(0, min(255, (int) round((float) $m[2])));
+            $b = max(0, min(255, (int) round((float) $m[3])));
+            if (isset($m[4]) && $m[4] !== '') {
+                $a = max(0, min(1, (float) $m[4]));
+                $a = rtrim(rtrim(number_format($a, 3, '.', ''), '0'), '.');
+                return 'rgba(' . $r . ', ' . $g . ', ' . $b . ', ' . $a . ')';
+            }
+            return 'rgb(' . $r . ', ' . $g . ', ' . $b . ')';
+        }
+
+        return '';
+    }
+
+    /**
+     * 清洗图标值：允许常见图标类名/名称字符，避免写入 HTML 或脚本片段。
+     *
+     * @param mixed $val 原始图标值。
+     * @return string    清洗后的图标字符串。
+     */
+    public static function sanitize_icon($val)
+    {
+        $value = sanitize_text_field((string) $val);
+        $value = trim($value);
+        if ($value === '') {
+            return '';
+        }
+        return preg_match('/^[#A-Za-z0-9_\-\s]+$/', $value) ? $value : '';
+    }
+
+    /**
+     * 清洗上传字段值：支持 URL / 附件 ID / 附件信息数组。
+     *
+     * @param mixed $val 原始上传值。
+     * @return mixed     清洗后的字符串、整数或数组。
+     */
+    public static function sanitize_upload($val)
+    {
+        if (is_array($val)) {
+            if ($val === []) {
+                return [];
+            }
+            $is_list = array_keys($val) === range(0, count($val) - 1);
+            if ($is_list) {
+                $out = [];
+                foreach ($val as $item) {
+                    $clean = self::sanitize_upload($item);
+                    if ($clean !== '' && $clean !== []) {
+                        $out[] = $clean;
+                    }
+                }
+                return $out;
+            }
+
+            $allowed = ['id', 'url', 'title', 'filename', 'mime', 'width', 'height', 'size'];
+            $out = [];
+            foreach ($allowed as $key) {
+                if (! array_key_exists($key, $val)) {
+                    continue;
+                }
+                if ($key === 'id' || $key === 'width' || $key === 'height') {
+                    $out[$key] = absint($val[$key]);
+                } elseif ($key === 'url') {
+                    $out[$key] = esc_url_raw((string) $val[$key]);
+                } else {
+                    $out[$key] = sanitize_text_field((string) $val[$key]);
+                }
+            }
+            return $out;
+        }
+
+        if (is_numeric($val)) {
+            return absint($val);
+        }
+
+        $value = trim((string) $val);
+        if ($value === '') {
+            return '';
+        }
+        return esc_url_raw($value);
+    }
+
+    /**
+     * 清洗 accordion 字段：按每个 panel 的 fields 子 schema 递归清洗。
+     *
+     * @param array $field accordion 字段 schema。
+     * @param mixed $val   原始 accordion 值。
+     * @return array       [section_id => [field_id => clean_value]]。
+     */
+    public static function sanitize_accordion($field, $val)
+    {
+        $raw = is_array($val) ? $val : [];
+        $clean = [];
+        $sections = isset($field['sections']) && is_array($field['sections']) ? $field['sections'] : [];
+
+        foreach ($sections as $index => $section) {
+            $section_id = isset($section['id']) && $section['id'] !== ''
+                ? (string) $section['id']
+                : (string) $index;
+
+            $section_raw = isset($raw[$section_id]) && is_array($raw[$section_id])
+                ? $raw[$section_id]
+                : [];
+
+            $clean[$section_id] = self::sanitize_by_sections([
+                [
+                    'fields' => isset($section['fields']) && is_array($section['fields'])
+                        ? $section['fields']
+                        : [],
+                ],
+            ], $section_raw);
+        }
+
+        return $clean;
     }
 }

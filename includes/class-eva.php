@@ -610,15 +610,15 @@ if (! class_exists('Eva')) {
         }
 
         /**
-         * 扫描 Libs/ 下的 UI 库（一库一文件夹，含同名 .js / .css）。
+         * 扫描 Libraries/ 下的 UI 库（一库一文件夹，含同名 .js / .css）。
          * 返回 [name => ['js' => url|null, 'css' => url|null, 'jsRel' => 相对路径, 'cssRel' => 相对路径]]。
          *
          * @return array<string,array{js:?string,css:?string,jsRel:?string,cssRel:?string}>
          */
         public static function lib_assets()
         {
-            $dir  = EVA_FW_DIR . 'Libs/';
-            $base = EVA_FW_URL . 'Libs/';
+            $dir  = EVA_FW_DIR . 'Libraries/';
+            $base = EVA_FW_URL . 'Libraries/';
             $out  = [];
             if (is_dir($dir)) {
                 // 只取子目录（一库一文件夹）；排序保证顺序稳定。
@@ -631,11 +631,11 @@ if (! class_exists('Eva')) {
                         $entry = ['js' => null, 'css' => null, 'jsRel' => null, 'cssRel' => null];
                         if (file_exists($folder . '/' . $name . '.js')) {
                             $entry['js']    = $base . $name . '/' . $name . '.js';
-                            $entry['jsRel'] = 'Libs/' . $name . '/' . $name . '.js';
+                            $entry['jsRel'] = 'Libraries/' . $name . '/' . $name . '.js';
                         }
                         if (file_exists($folder . '/' . $name . '.css')) {
                             $entry['css']    = $base . $name . '/' . $name . '.css';
-                            $entry['cssRel'] = 'Libs/' . $name . '/' . $name . '.css';
+                            $entry['cssRel'] = 'Libraries/' . $name . '/' . $name . '.css';
                         }
                         $out[$name] = $entry;
                     }

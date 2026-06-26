@@ -192,8 +192,27 @@ if (! function_exists('eva_demo_recent_activities')) {
     'title'  => '常规设置',
     'icon'   => 'ri-equalizer-line',
     'fields' => [
+        ['id' => 'primary_color', 'type' => 'color', 'title' => '主色调', 'default' => '#FF4D7F', 'alpha' => true, 'presets' => ['#FF4D7F', '#EF4444', '#F97316', '#FACC15', '#22C55E', '#38BDF8', '#3B82F6', '#8B5CF6', '#64748B'], 'desc' => '用于按钮、链接、强调状态等主要视觉元素。', 'width' => '1/3'],
+        ['id' => 'feature_icon', 'type' => 'icon', 'title' => '功能图标', 'default' => 'ri-star-fill', 'library' => 'remix', 'placeholder' => '请选择一个图标', 'desc' => '请选择一个合适的图标，用于功能展示。', 'required' => false, 'width' => '1/3'],
+        ['id' => 'cover_image', 'type' => 'upload', 'title' => '封面图片', 'desc' => '建议尺寸：1920x1080 像素，支持 jpg、png、webp 格式，最大 5MB。', 'default' => '', 'library' => 'image', 'button_title' => '选择图片', 'placeholder' => '点击或拖拽图片到此处', 'preview' => true, 'width' => '1/3'],
         ['id' => 'site_slogan', 'type' => 'text', 'title' => '站点标语', 'desc' => '显示在首页的一句话', 'default' => '', 'placeholder' => '请输入标语', 'width' => '1/3'],
         ['id' => 'enable_feature', 'type' => 'switcher', 'title' => '启用示例功能', 'desc' => '开启或关闭', 'default' => false, 'width' => '1/3'],
+        ['id' => 'settings_accordion', 'type' => 'accordion', 'title' => '手风琴设置', 'desc' => '将相关配置按折叠区组织，提升复杂表单可读性。', 'default_open' => ['basic'], 'closed_icon' => 'ri-arrow-down-s-line', 'open_icon' => 'ri-arrow-up-s-line', 'width' => 'full', 'sections' => [
+            ['id' => 'basic', 'title' => '基本设置', 'badge' => '1', 'fields' => [
+                ['id' => 'title', 'type' => 'text', 'title' => '标题', 'default' => '示例标题', 'width' => '1/2'],
+                ['id' => 'description', 'type' => 'textarea', 'title' => '描述', 'default' => '', 'width' => '1/2'],
+            ]],
+            ['id' => 'content', 'title' => '内容设置', 'badge' => '2', 'fields' => [
+                ['id' => 'content_title', 'type' => 'text', 'title' => '内容标题', 'default' => '', 'width' => '1/2'],
+                ['id' => 'content_enabled', 'type' => 'switcher', 'title' => '启用内容', 'default' => 1, 'width' => '1/2'],
+            ]],
+            ['id' => 'display', 'title' => '显示设置', 'badge' => '3', 'fields' => [
+                ['id' => 'display_mode', 'type' => 'select', 'title' => '显示模式', 'default' => 'normal', 'options' => ['normal' => '普通', 'compact' => '紧凑'], 'width' => '1/2'],
+            ]],
+            ['id' => 'advanced', 'title' => '高级选项', 'badge' => '4', 'disabled' => false, 'fields' => [
+                ['id' => 'advanced_note', 'type' => 'textarea', 'title' => '备注', 'default' => '', 'width' => 'full'],
+            ]],
+        ]],
         ['id' => 'layout_mode', 'type' => 'select', 'title' => '布局模式', 'desc' => '选择一种布局', 'default' => 'wide', 'options' => ['wide' => '宽屏', 'boxed' => '盒装', 'fluid' => '流式'], 'width' => '1/3'],
         ['id' => 'region', 'type' => 'select', 'title' => '所在地区', 'desc' => '分组 + 下拉内搜索演示', 'default' => 'sh', 'searchable' => true, 'empty_message' => '没有匹配的地区', 'width' => '1/2', 'options' => [
             '华北' => ['bj' => '北京', 'tj' => '天津', 'sjz' => '石家庄'],

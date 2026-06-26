@@ -303,7 +303,7 @@
       }
       var rootStyle = Vue.computed(function () {
         var a = accents.find(function (x) { return x.key === accent.value; });
-        if (!a) return {};
+        if (!a) { a = accents[0]; }
         return {
           '--eva-primary': a.color,
           '--eva-primary-600': a.c600,
@@ -944,11 +944,6 @@
       '            <em>{{ String(i + 1).padStart(2, \'0\') }}</em>',
       '          </div>',
       '        </div>',
-      '        <div class="eva-guide-tabs" role="tablist" aria-label="指南分类">',
-      '          <button v-for="g in guide.groups" :key="g.id" type="button" class="eva-guide-tab" :class="{ \'is-active\': activeGuideTab === g.id }" @click="activeGuideTab = g.id" role="tab" :aria-selected="activeGuideTab === g.id ? \'true\' : \'false\'">',
-      '            <i :class="g.icon"></i><span>{{ g.label }}</span>',
-      '          </button>',
-      '        </div>',
       '        <div class="eva-guide-grid">',
       '          <div class="eva-guide-docs">',
       '            <section v-for="s in currentGuideSections" :key="s.id" :id="\'eva-guide-\' + activeGuideTab + \'-\' + s.id" class="eva-guide-card" :class="{ \'is-quick\': s.steps, \'is-framework\': s.cards }">',
@@ -971,6 +966,11 @@
       '            </section>',
       '          </div>',
       '          <aside class="eva-guide-side">',
+      '            <div class="eva-guide-tabs" role="tablist" aria-label="指南分类">',
+      '              <button v-for="g in guide.groups" :key="g.id" type="button" class="eva-guide-tab" :class="{ \'is-active\': activeGuideTab === g.id }" @click="activeGuideTab = g.id" role="tab" :aria-selected="activeGuideTab === g.id ? \'true\' : \'false\'">',
+      '                <i :class="g.icon"></i><span>{{ g.label }}</span>',
+      '              </button>',
+      '            </div>',
       '            <div class="eva-guide-side-card">',
       '              <h3><i :class="currentGuideGroup.icon"></i>{{ currentGuideGroup.label }}导航</h3>',
       '              <a v-for="(s, i) in currentGuideSections" :key="s.id" :href="\'#eva-guide-\' + activeGuideTab + \'-\' + s.id" class="eva-guide-side-link"><span>{{ s.title }}</span><em>{{ String(i + 1).padStart(2, \'0\') }}</em></a>',
@@ -1110,10 +1110,22 @@
         '<i v-else v-bind="$attrs"></i>'
     });
 
-    // 注册 UI 库组件（Libs/）：供字段模板使用，如 <eva-select>
+    // 注册 UI 库组件（Libraries/）：供字段模板使用，如 <eva-select>
     // 注：eva-modal / eva-drawer 等其余库目前是骨架，实现后在此各加一行 app.component 注册即可。
     if (window.EvaUI && window.EvaUI.Select) {
       app.component('eva-select', window.EvaUI.Select);
+    }
+    if (window.EvaUI && window.EvaUI.Color) {
+      app.component('eva-color', window.EvaUI.Color);
+    }
+    if (window.EvaUI && window.EvaUI.IconPicker) {
+      app.component('eva-icon-picker', window.EvaUI.IconPicker);
+    }
+    if (window.EvaUI && window.EvaUI.Media) {
+      app.component('eva-media', window.EvaUI.Media);
+    }
+    if (window.EvaUI && window.EvaUI.Accordion) {
+      app.component('eva-accordion', window.EvaUI.Accordion);
     }
     // 字段分发组件：按 field.type 从 window.EvaFields 注册表取对应组件渲染
     app.component('eva-field', {
