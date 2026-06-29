@@ -45,7 +45,8 @@
       placeholder: { type: String, default: '点击或拖拽图片到此处' },
       returnType: { type: String, default: '' },
       maxSize: { type: [Number, String], default: 5 },
-      preview: { type: Boolean, default: true }
+      preview: { type: Boolean, default: true },
+      showDrop: { type: Boolean, default: true }
     },
     emits: ['update:modelValue'],
     data: function () {
@@ -269,7 +270,7 @@
       isImage: isImage
     },
     template: [
-      '<div class="eva-media" :class="{ \'is-drag\': drag, \'is-uploading\': uploading }">',
+      '<div class="eva-media" :class="{ \'is-drag\': drag, \'is-uploading\': uploading, \'is-compact\': !showDrop }">',
       '  <input ref="file" class="eva-media-file" type="file" :accept="accept" :multiple="multiple" @change="onFileChange">',
       '  <div class="eva-media-list" v-if="items.length">',
       '    <div class="eva-media-item" v-for="(item, i) in items" :key="item.url || item.id || i">',
@@ -288,11 +289,10 @@
       '    </div>',
       '  </div>',
       '  <div v-else class="eva-media-empty">',
-      '    <span class="eva-media-empty-icon"><i class="ri-image-line"></i></span>',
       '    <button type="button" class="eva-media-primary" @click="chooseFile"><i class="ri-upload-cloud-2-line"></i>{{ buttonTitle || \'选择图片\' }}</button>',
       '    <button type="button" class="eva-media-secondary" @click="openLibrary">从媒体库选择</button>',
       '  </div>',
-      '  <div class="eva-media-drop" @dragenter.prevent="drag = true" @dragover.prevent="drag = true" @dragleave.prevent="drag = false" @drop.prevent="onDrop">',
+      '  <div v-if="showDrop" class="eva-media-drop" @dragenter.prevent="drag = true" @dragover.prevent="drag = true" @dragleave.prevent="drag = false" @drop.prevent="onDrop">',
       '    <i class="ri-upload-cloud-2-line"></i>',
       '    <strong>{{ uploading ? \'正在上传...\' : placeholder }}</strong>',
       '    <span>支持 jpg、png、webp 格式，最大 {{ maxSize }}MB</span>',
@@ -301,7 +301,7 @@
       '  <div v-if="browserOpen" class="eva-media-browser" role="dialog" aria-modal="true">',
       '    <div class="eva-media-browser-panel">',
       '      <div class="eva-media-browser-head">',
-      '        <div><strong>{{ title || \'选择媒体\' }}</strong><span>从媒体库选择或搜索已有文件</span></div>',
+      '        <div><strong>选择媒体</strong><span>从媒体库选择或搜索已有文件</span></div>',
       '        <button type="button" class="eva-media-browser-close" @click="closeLibrary"><i class="ri-close-line"></i></button>',
       '      </div>',
       '      <div class="eva-media-browser-toolbar">',

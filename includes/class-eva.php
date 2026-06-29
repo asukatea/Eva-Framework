@@ -694,6 +694,10 @@ if (! class_exists('Eva')) {
          */
         public static function enqueue_runtime()
         {
+            // 媒体库支持：image_select 的“媒体库”按钮用 wp.media 原生弹窗挑图。
+            if (function_exists('wp_enqueue_media') && is_admin()) {
+                wp_enqueue_media();
+            }
             // 基础依赖：Vue3 + 图标字体 + 框架样式。
             wp_enqueue_script('eva-vue3', 'https://cdn.jsdelivr.net/npm/vue@3.4.38/dist/vue.global.prod.js', [], '3.4.38', true);
             wp_enqueue_style('eva-remixicon', 'https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css', [], '4.5.0');

@@ -112,7 +112,24 @@
       alpha: { type: Boolean, default: true },
       presets: { type: Array, default: function () { return []; } },
       placeholder: { type: String, default: '' },
-      defaultValue: { type: String, default: '' }
+      defaultValue: { type: String, default: '' },
+      mode: { type: String, default: 'popover' },
+      size: { type: String, default: 'medium' },
+      defaultFormat: { type: String, default: 'hex' },
+      formats: { type: Array, default: function () { return []; } },
+      showInput: { type: Boolean, default: true },
+      showFormat: { type: Boolean, default: true },
+      showPresets: { type: Boolean, default: true },
+      clearable: { type: Boolean, default: true },
+      resettable: { type: Boolean, default: true },
+      disabled: { type: Boolean, default: false },
+      paletteLabel: { type: String, default: '' },
+      clearText: { type: String, default: '清除' },
+      applyText: { type: String, default: '应用' },
+      defaultText: { type: String, default: '默认' },
+      popoverWidth: { type: [String, Number], default: '' },
+      boardHeight: { type: [String, Number], default: '' },
+      presetShape: { type: String, default: 'square' }
     },
     emits: ['update:modelValue'],
     data: function () {
@@ -159,8 +176,52 @@
           background: 'linear-gradient(90deg, rgba(' + rgb.r + ', ' + rgb.g + ', ' + rgb.b + ', 0), rgba(' + rgb.r + ', ' + rgb.g + ', ' + rgb.b + ', 1))'
         };
       },
+      isInline: function () {
+        return this.mode === 'inline';
+      },
+      panelOpen: function () {
+        return this.isInline || this.open;
+      },
+      colorClass: function () {
+        var size = ['small', 'medium', 'large'].indexOf(this.size) !== -1 ? this.size : 'medium';
+        var shape = this.presetShape === 'circle' ? 'circle' : 'square';
+        return {
+          'is-open': this.panelOpen,
+          'is-inline': this.isInline,
+          'is-disabled': this.disabled,
+          'is-small': size === 'small',
+          'is-large': size === 'large',
+          'has-circle-presets': shape === 'circle'
+        };
+      },
+      styleVars: function () {
+        var out = {};
+        if (this.popoverWidth) {
+          out['--eva-color-popover-width'] = typeof this.popoverWidth === 'number' ? this.popoverWidth + 'px' : this.popoverWidth;
+        }
+        if (this.boardHeight) {
+          out['--eva-color-board-height'] = typeof this.boardHeight === 'number' ? this.boardHeight + 'px' : this.boardHeight;
+        }
+        return out;
+      },
+      allowedFormats: function () {
+        var raw = this.formats && this.formats.length ? this.formats : [this.defaultFormat || 'hex', 'rgba'];
+        var out = [];
+        raw.forEach(function (item) {
+          item = String(item || '').toLowerCase();
+          if (item === 'hex' || item === 'rgba') { out.push(item); }
+        });
+        if (!this.alpha) { out = out.filter(function (item) { return item === 'hex'; }); }
+        if (!out.length) { out.push('hex'); }
+        return out.filter(function (item, index) { return out.indexOf(item) === index; });
+      },
       formatOptions: function () {
-        return this.alpha ? { hex: 'HEX', rgba: 'RGBA' } : { hex: 'HEX' };
+        var out = {};
+        this.allowedFormats.forEach(function (item) { out[item] = item.toUpperCase(); });
+        return out;
+      },
+      canSelectFormat: function () {
+        return this.showFormat && this.allowedFormats.length > 1;
       },
       normalizedPresets: function () {
         var fallback = ['#FF4D7F', '#EF4444', '#F97316', '#FACC15', '#22C55E', '#38BDF8', '#3B82F6', '#8B5CF6', '#64748B'];
@@ -182,6 +243,11 @@
           this.format = 'hex';
           this.a = 1;
         }
+      },
+      allowedFormats: function () {
+        if (this.allowedFormats.indexOf(this.format) === -1) {
+          this.format = this.allowedFormats[0] || 'hex';
+        }
       }
     },
     mounted: function () {
@@ -196,14 +262,19 @@
     methods: {
       syncDraft: function (value) {
         var parsed = parseColor(value);
-        if (!parsed) { return; }
+        if (!parsed) {
+          var desired = String(this.defaultFormat || this.format || 'hex').toLowerCase();
+          this.format = this.allowedFormats.indexOf(desired) !== -1 ? desired : (this.allowedFormats[0] || 'hex');
+          return;
+        }
         this.h = parsed.h;
         this.s = parsed.s;
         this.v = parsed.v;
         this.a = this.alpha ? parsed.a : 1;
-        this.format = (this.alpha && parsed.format === 'rgba') ? 'rgba' : 'hex';
+        this.format = this.allowedFormats.indexOf(parsed.format) !== -1 ? parsed.format : (this.allowedFormats[0] || 'hex');
       },
       toggle: function () {
+        if (this.disabled || this.isInline) { return; }
         this.open = !this.open;
         if (this.open) { this.syncDraft(this.modelValue || this.defaultValue); }
       },
@@ -211,10 +282,11 @@
         this.open = false;
       },
       onDocumentDown: function (event) {
-        if (!this.open || !this.$el || this.$el.contains(event.target)) { return; }
+        if (this.isInline || !this.open || !this.$el || this.$el.contains(event.target)) { return; }
         this.close();
       },
       commitText: function () {
+        if (this.disabled) { return; }
         var parsed = parseColor(this.inputText);
         if (!parsed) {
           this.inputText = this.modelValue || '';
@@ -224,26 +296,31 @@
         this.apply();
       },
       reset: function () {
+        if (this.disabled) { return; }
         var value = this.defaultValue || '';
         this.$emit('update:modelValue', value);
         this.inputText = value;
         this.syncDraft(value);
       },
       clear: function () {
+        if (this.disabled) { return; }
         this.$emit('update:modelValue', '');
         this.inputText = '';
-        this.close();
+        if (!this.isInline) { this.close(); }
       },
       apply: function () {
+        if (this.disabled) { return; }
         var value = this.draftText;
         this.$emit('update:modelValue', value);
         this.inputText = value;
-        this.close();
+        if (!this.isInline) { this.close(); }
       },
       setFormatValue: function (value) {
-        this.format = value === 'rgba' && this.alpha ? 'rgba' : 'hex';
+        if (this.disabled) { return; }
+        this.format = this.allowedFormats.indexOf(value) !== -1 ? value : (this.allowedFormats[0] || 'hex');
       },
       setPreset: function (color) {
+        if (this.disabled) { return; }
         this.syncDraft(color);
       },
       point: function (event, el) {
@@ -269,6 +346,7 @@
         this.a = p.x;
       },
       startDrag: function (event, kind) {
+        if (this.disabled) { return; }
         event.preventDefault();
         var el = event.currentTarget;
         var self = this;
@@ -309,14 +387,14 @@
       }
     },
     template: [
-      '<div class="eva-color" :class="{ \'is-open\': open }">',
+      '<div class="eva-color" :class="colorClass" :style="styleVars">',
       '  <div class="eva-color-control">',
-      '    <button type="button" class="eva-color-swatch" :style="swatchStyle" @click="toggle" aria-label="选择颜色"></button>',
-      '    <input class="eva-color-input" :placeholder="placeholder || \'#FF4D7F\'" v-model="inputText" @change="commitText" @keydown.enter.prevent="commitText">',
-      '    <div class="eva-color-format"><eva-select :options="formatOptions" :searchable="false" :model-value="format" @update:model-value="setFormatValue"></eva-select></div>',
-      '    <button type="button" class="eva-color-reset" @click="reset">默认</button>',
+      '    <button type="button" class="eva-color-swatch" :disabled="disabled" :style="swatchStyle" @click="toggle" aria-label="选择颜色"></button>',
+      '    <input v-if="showInput" class="eva-color-input" :disabled="disabled" :placeholder="placeholder || \'#FF4D7F\'" v-model="inputText" @change="commitText" @keydown.enter.prevent="commitText">',
+      '    <div v-if="canSelectFormat" class="eva-color-format"><eva-select :options="formatOptions" :searchable="false" :model-value="format" @update:model-value="setFormatValue"></eva-select></div>',
+      '    <button v-if="resettable" type="button" class="eva-color-reset" :disabled="disabled" @click="reset">{{ defaultText }}</button>',
       '  </div>',
-      '  <div v-show="open" class="eva-color-popover">',
+      '  <div v-show="panelOpen" class="eva-color-popover">',
       '    <div class="eva-color-pop-head">',
       '      <span class="eva-color-pop-swatch" :style="{ background: draftText }"></span>',
       '      <strong>{{ draftText }}</strong>',
@@ -336,12 +414,15 @@
       '      <span class="eva-color-slider-point" :style="alphaPointerStyle"></span>',
       '      <em>{{ Math.round(a * 100) }}%</em>',
       '    </div>',
-      '    <div class="eva-color-presets">',
+      '    <div v-if="showPresets" class="eva-color-presets-wrap">',
+      '      <div v-if="paletteLabel" class="eva-color-presets-title">{{ paletteLabel }}</div>',
+      '      <div class="eva-color-presets">',
       '      <button v-for="preset in normalizedPresets" :key="preset" type="button" :style="{ background: preset }" @click="setPreset(preset)" :aria-label="preset"></button>',
+      '      </div>',
       '    </div>',
       '    <div class="eva-color-actions">',
-      '      <button type="button" class="eva-color-btn" @click="clear">清除</button>',
-      '      <button type="button" class="eva-color-btn is-primary" @click="apply">应用</button>',
+      '      <button v-if="clearable" type="button" class="eva-color-btn" :disabled="disabled" @click="clear">{{ clearText }}</button>',
+      '      <button type="button" class="eva-color-btn is-primary" :disabled="disabled" @click="apply">{{ applyText }}</button>',
       '    </div>',
       '  </div>',
       '</div>'

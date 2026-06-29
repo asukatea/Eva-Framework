@@ -5,6 +5,18 @@
   max-width: 560px;
 }
 
+.eva-color.is-small {
+  max-width: 420px;
+}
+
+.eva-color.is-large {
+  max-width: 720px;
+}
+
+.eva-color.is-disabled {
+  opacity: 0.68;
+}
+
 .eva-color-control {
   display: inline-flex;
   align-items: center;
@@ -28,6 +40,24 @@
   padding: 0;
   cursor: pointer;
   transition: transform var(--eva-ease), border-color var(--eva-ease), box-shadow var(--eva-ease);
+}
+
+.eva-color.is-small .eva-color-swatch {
+  width: 22px;
+  height: 22px;
+}
+
+.eva-color.is-large .eva-color-swatch {
+  width: 32px;
+  height: 32px;
+}
+
+.eva-color-swatch:disabled,
+.eva-color-input:disabled,
+.eva-color-reset:disabled,
+.eva-color-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
 }
 
 .eva-color-swatch:hover,
@@ -58,6 +88,14 @@
   min-width: 120px;
   padding: 0 10px;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+}
+
+.eva-color.is-small .eva-color-input {
+  min-width: 96px;
+}
+
+.eva-color.is-large .eva-color-input {
+  min-width: 220px;
 }
 
 .eva-color-format {
@@ -99,12 +137,19 @@
   left: 0;
   top: calc(100% + 8px);
   z-index: 80;
-  width: 236px;
+  width: var(--eva-color-popover-width, 236px);
   padding: 10px;
   border: 1px solid var(--eva-border);
   border-radius: var(--eva-radius);
   background: var(--eva-surface);
   box-shadow: 0 18px 42px color-mix(in srgb, var(--eva-text) 18%, transparent);
+}
+
+.eva-color.is-inline .eva-color-popover {
+  position: static;
+  display: block;
+  margin-top: 10px;
+  box-shadow: none;
 }
 
 .eva-color-pop-head {
@@ -132,10 +177,18 @@
 
 .eva-color-board {
   position: relative;
-  height: 138px;
+  height: var(--eva-color-board-height, 138px);
   overflow: hidden;
   border-radius: var(--eva-radius);
   cursor: crosshair;
+}
+
+.eva-color.is-small .eva-color-board {
+  height: var(--eva-color-board-height, 108px);
+}
+
+.eva-color.is-large .eva-color-board {
+  height: var(--eva-color-board-height, 180px);
 }
 
 .eva-color-board-white,
@@ -209,11 +262,21 @@
   top: 50%;
 }
 
+.eva-color-presets-wrap {
+  margin-top: 14px;
+}
+
+.eva-color-presets-title {
+  margin-bottom: 7px;
+  color: var(--eva-text-mute);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
 .eva-color-presets {
   display: flex;
   flex-wrap: wrap;
   gap: 7px;
-  margin-top: 14px;
 }
 
 .eva-color-presets button {
@@ -225,6 +288,10 @@
   cursor: pointer;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.45);
   transition: transform var(--eva-ease), border-color var(--eva-ease), box-shadow var(--eva-ease);
+}
+
+.eva-color.has-circle-presets .eva-color-presets button {
+  border-radius: 50%;
 }
 
 .eva-color-presets button:hover {

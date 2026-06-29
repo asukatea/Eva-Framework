@@ -35,6 +35,8 @@ class Admin
         add_action('wp_ajax_eva_fw_set_guide', [$this, 'ajax_set_guide']);
         // 全局开关：后台悬浮窗启用状态。
         add_action('wp_ajax_eva_fw_set_floating', [$this, 'ajax_set_floating']);
+        // 字段远程搜索：CSF 风格的文章 / 页面 AJAX 查找。
+        add_action('wp_ajax_eva_fw_search_posts', [$this, 'ajax_search_posts']);
     }
 
     /**
@@ -138,6 +140,9 @@ class Admin
         if (! $current) {
             return;
         }
+
+        // 媒体库支持：image_select 的“媒体库”按钮用 wp.media 原生弹窗挑图。
+        wp_enqueue_media();
 
         // 基础依赖：Vue3 运行时 + Remixicon 图标字体 + 框架样式。
         wp_enqueue_script(
@@ -255,5 +260,113 @@ class Admin
         $enabled = (isset($_POST['enabled']) && $_POST['enabled'] === '1') ? '1' : '0';
         update_option('eva_fw_floating', $enabled);
         wp_send_json_success(['enabled' => $enabled === '1']);
+    }
+
+    /**
+     * AJAX：供 ajax_select 字段远程搜索文章 / 页面等 post type。
+     *
+     * @return void 以 JSON 响应并结束请求。
+     */
+    public function ajax_search_posts()
+    {
+        if (! check_ajax_referer('eva_fw_guide', 'nonce', false)) {
+            wp_send_json_error(['msg' => 'bad_nonce'], 403);
+        }
+        if (! current_user_can('edit_posts')) {
+            wp_send_json_error(['msg' => 'forbidden'], 403);
+        }
+
+        $query = isset($_GET['q']) ? sanitize_text_field(wp_unslash($_GET['q'])) : '';
+        $include = isset($_GET['include']) ? $this->ajax_search_include_ids(wp_unslash($_GET['include'])) : [];
+        $limit = isset($_GET['limit']) ? max(1, min(30, absint($_GET['limit']))) : 20;
+        $post_types = $this->ajax_search_post_types();
+
+        $query_length = function_exists('mb_strlen') ? mb_strlen($query) : strlen($query);
+        if (! $include && $query_length < 2) {
+            wp_send_json_success(['items' => []]);
+        }
+
+        $args = [
+            'post_type'      => $post_types,
+            'post_status'    => ['publish', 'draft', 'pending', 'future', 'private'],
+            'posts_per_page' => $limit,
+            'no_found_rows'  => true,
+            'orderby'        => 'date',
+            'order'          => 'DESC',
+        ];
+
+        if ($include) {
+            $args['post__in'] = $include;
+            $args['orderby'] = 'post__in';
+        } else {
+            $args['s'] = $query;
+        }
+
+        $posts = new \WP_Query($args);
+        $items = [];
+
+        foreach ($posts->posts as $post) {
+            $type_object = get_post_type_object($post->post_type);
+            $type_label = ($type_object && ! empty($type_object->labels->singular_name))
+                ? $type_object->labels->singular_name
+                : $post->post_type;
+            $title = get_the_title($post);
+            if ($title === '') {
+                $title = '（无标题）';
+            }
+            $items[] = [
+                'value'  => (string) $post->ID,
+                'label'  => $title,
+                'type'   => $type_label,
+                'status' => get_post_status($post),
+            ];
+        }
+
+        wp_send_json_success(['items' => $items]);
+    }
+
+    /**
+     * 从请求中读取并校验可搜索 post type。
+     *
+     * @return string[]
+     */
+    private function ajax_search_post_types()
+    {
+        $raw = isset($_GET['post_type']) ? wp_unslash($_GET['post_type']) : ['post', 'page'];
+        if (is_string($raw)) {
+            $raw = explode(',', $raw);
+        }
+        $types = [];
+        foreach ((array) $raw as $type) {
+            $type = sanitize_key($type);
+            $object = $type ? get_post_type_object($type) : null;
+            if ($object && ! empty($object->show_ui)) {
+                $types[] = $type;
+            }
+        }
+        return $types ?: ['post', 'page'];
+    }
+
+    /**
+     * 解析 AJAX 回填用的文章 ID 列表。
+     *
+     * @param mixed $raw include 参数，可为逗号字符串或数组。
+     * @return int[]
+     */
+    private function ajax_search_include_ids($raw)
+    {
+        if (is_string($raw)) {
+            $raw = explode(',', $raw);
+        }
+
+        $ids = [];
+        foreach ((array) $raw as $id) {
+            $id = absint($id);
+            if ($id > 0) {
+                $ids[] = $id;
+            }
+        }
+
+        return array_values(array_unique($ids));
     }
 }

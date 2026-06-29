@@ -11,6 +11,7 @@
  * - `placeholder`：拖拽区提示。
  * - `return_type`：url / id / array，默认单图返回 url。
  * - `preview`：是否显示图片预览，默认 true。
+ * - `show_drop`：是否显示拖拽上传区域，默认 true。
  */
 (function () {
   window.EvaFields = window.EvaFields || {};
@@ -28,6 +29,7 @@
       ' :return-type="field.return_type || field.returnType || \'url\'"' +
       ' :max-size="field.max_size || field.maxSize || 5"' +
       ' :preview="field.preview !== false"' +
+      ' :show-drop="field.show_drop !== false && field.showDrop !== false"' +
       ' @update:model-value="$emit(\'update:modelValue\', $event)"></eva-media>'
   };
 })();

@@ -133,28 +133,22 @@
   min-height: 56px;
 }
 
-.eva-media-empty-icon {
-  display: grid;
-  place-items: center;
-  width: 34px;
-  height: 34px;
-  border: 1px solid var(--eva-border);
-  border-radius: var(--eva-radius);
-  background: var(--eva-soft);
-  color: var(--eva-text-mute);
+.eva-media.is-compact .eva-media-empty {
+  min-height: 30px;
+  flex-wrap: wrap;
 }
 
 .eva-media-drop {
   display: flex;
-  min-height: 170px;
+  min-height: 60px;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 22px;
-  border: 1.5px dashed color-mix(in srgb, var(--eva-primary) 55%, var(--eva-border));
+  gap: 4px;
+  padding: 8px 12px;
+  border: 1px dashed color-mix(in srgb, var(--eva-primary) 42%, var(--eva-border));
   border-radius: var(--eva-radius);
-  background: linear-gradient(135deg, color-mix(in srgb, var(--eva-primary) 4%, var(--eva-surface)), var(--eva-surface));
+  background: color-mix(in srgb, var(--eva-primary) 3%, var(--eva-surface));
   color: var(--eva-text-sub);
   text-align: center;
   transition: border-color var(--eva-ease), background var(--eva-ease), box-shadow var(--eva-ease);
@@ -162,18 +156,18 @@
 
 .eva-media-drop > i {
   color: var(--eva-primary);
-  font-size: 34px;
+  font-size: 18px;
 }
 
 .eva-media-drop strong {
   color: var(--eva-text);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
 }
 
 .eva-media-drop span {
   color: var(--eva-text-mute);
-  font-size: 11.5px;
+  font-size: 11px;
 }
 
 .eva-media.is-drag .eva-media-drop {

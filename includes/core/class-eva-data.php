@@ -118,7 +118,7 @@ class Data
     /**
      * 按字段类型清洗单个值。
      *
-     * 注意（迁移须知）：当前仅覆盖 switcher / textarea / select / color / color_group / icon / upload / image_select / accordion / text 等类型，其余类型都会落到
+     * 注意（迁移须知）：当前仅覆盖 switcher / textarea / select / ajax_select / color / color_group / icon / upload / image_select / accordion / text 等类型，其余类型都会落到
      * default 分支被强制转成字符串。对「值为数组」的字段（group/repeater/checkbox/gallery 等），
      * 这会破坏数据——迁移此类字段前必须在此补对应分支。
      *
@@ -146,12 +146,42 @@ class Data
                 return self::sanitize_upload($val);
             case 'image_select':
                 return self::sanitize_image_select($field, $val);
+            case 'ajax_select':
+                return self::sanitize_select($field, $val);
             case 'select':
+                return self::sanitize_select($field, $val);
             case 'text':
             default:
                 // 其余（含未识别类型）按单行文本清洗——数组型字段在此会被损坏，详见上方注意。
                 return sanitize_text_field((string) $val);
         }
+    }
+
+    /**
+     * 清洗 select 字段；支持普通单选、多选，以及 ajax=true 的 ID 单选/多选。
+     *
+     * @param array $field 字段 schema。
+     * @param mixed $val   原始值。
+     * @return string|int|array
+     */
+    public static function sanitize_select($field, $val)
+    {
+        $multiple = ! empty($field['multiple']);
+        $ajax = ! empty($field['ajax']) || (isset($field['type']) && $field['type'] === 'ajax_select');
+
+        if ($multiple) {
+            $values = is_array($val) ? $val : (($val === null || $val === '') ? [] : [$val]);
+            $out = [];
+            foreach ($values as $item) {
+                $clean = $ajax ? absint($item) : sanitize_text_field((string) $item);
+                if ($clean !== '' && $clean !== 0) {
+                    $out[] = $clean;
+                }
+            }
+            return array_values(array_unique($out));
+        }
+
+        return $ajax ? absint($val) : sanitize_text_field((string) $val);
     }
 
     /**
