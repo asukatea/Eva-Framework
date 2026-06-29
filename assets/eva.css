@@ -2347,6 +2347,350 @@ body.eva-fullscreen #wpbody-content {
 }
 .eva-admin .eva-form--flush .eva-field-meta { display: none; }
 
+/* color_group 字段：按文档预览图的内容区样式实现 */
+.eva-admin .eva-field-row:has(.eva-color-group) > .eva-field-meta {
+  display: none;
+}
+
+.eva-color-group {
+  min-height: 72px;
+  padding: 12px 14px;
+  overflow: visible;
+  border: 1px solid var(--eva-border);
+  border-radius: var(--eva-radius);
+  background: var(--eva-surface);
+}
+
+.eva-cg-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-height: 20px;
+  margin-bottom: 8px;
+}
+
+.eva-cg-head strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--eva-text);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.eva-cg-head i {
+  color: var(--eva-primary);
+  font-style: normal;
+}
+
+.eva-cg-palette {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-height: 30px;
+}
+
+.eva-cg-chip {
+  position: relative;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  border: 1px solid color-mix(in srgb, var(--eva-text) 8%, transparent);
+  border-radius: var(--eva-radius);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.42);
+  cursor: pointer;
+  transition: transform var(--eva-ease), box-shadow var(--eva-ease), opacity var(--eva-ease);
+}
+
+.eva-cg-chip:hover {
+  transform: translateY(-1px);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.42), 0 6px 16px color-mix(in srgb, var(--eva-text) 14%, transparent);
+}
+
+.eva-cg-chip.is-dragging {
+  opacity: 0.55;
+}
+
+.eva-cg-chip input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.eva-cg-remove {
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 15px;
+  height: 15px;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--eva-primary) 28%, var(--eva-border));
+  border-radius: 50%;
+  background: var(--eva-surface);
+  color: var(--eva-primary);
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.eva-cg-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 26px;
+  padding: 0 13px;
+  border: 1px dashed color-mix(in srgb, var(--eva-primary) 52%, var(--eva-border));
+  border-radius: var(--eva-radius);
+  background: color-mix(in srgb, var(--eva-primary) 3%, transparent);
+  color: var(--eva-primary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--eva-ease), border-color var(--eva-ease);
+}
+
+.eva-cg-add:hover {
+  border-color: var(--eva-primary);
+  background: color-mix(in srgb, var(--eva-primary) 8%, transparent);
+}
+
+.eva-color-group p {
+  margin: 4px 0 0;
+  color: var(--eva-text-sub);
+  font-size: 11.5px;
+  line-height: 1.45;
+}
+
+.eva-color-group.is-empty .eva-cg-palette {
+  min-height: 26px;
+}
+
+/* image_select 字段：图像卡片单选 */
+.eva-image-select {
+  display: grid;
+  gap: 10px;
+  width: 100%;
+}
+
+.eva-is-card {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid var(--eva-border);
+  border-radius: var(--eva-radius);
+  background: var(--eva-surface);
+  color: var(--eva-text);
+  font: inherit;
+  text-align: center;
+  cursor: pointer;
+  flex-direction: column;
+  gap: 7px;
+  transition: border-color var(--eva-ease), box-shadow var(--eva-ease), transform var(--eva-ease), background var(--eva-ease);
+}
+
+.eva-is-card:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--eva-primary) 58%, var(--eva-border));
+  box-shadow: var(--eva-shadow-card-hover);
+}
+
+.eva-is-card:focus-visible {
+  outline: none;
+  border-color: var(--eva-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--eva-primary) 18%, transparent);
+}
+
+.eva-is-card.is-selected {
+  border-color: var(--eva-primary);
+  background: color-mix(in srgb, var(--eva-primary) 4%, var(--eva-surface));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--eva-primary) 18%, transparent);
+}
+
+.eva-is-card.is-disabled,
+.eva-image-select.is-disabled .eva-is-card {
+  cursor: not-allowed;
+  opacity: 0.55;
+  transform: none;
+  box-shadow: none;
+}
+
+.eva-is-preview {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  width: 100%;
+  height: var(--eva-is-height, auto);
+  aspect-ratio: var(--eva-is-ratio, 16 / 9);
+  border: 1px solid color-mix(in srgb, var(--eva-border) 80%, transparent);
+  border-radius: var(--eva-radius);
+  background: linear-gradient(135deg, var(--eva-soft), color-mix(in srgb, var(--eva-primary) 8%, var(--eva-soft)));
+}
+
+.eva-is-preview img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: var(--eva-is-fit, cover);
+}
+
+.eva-is-placeholder {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  place-items: center;
+  color: var(--eva-text-mute);
+  font-size: 22px;
+}
+
+.eva-is-check {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: grid;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--eva-primary);
+  color: #fff;
+  font-size: 13px;
+  box-shadow: 0 4px 10px color-mix(in srgb, var(--eva-primary) 35%, transparent);
+  place-items: center;
+}
+
+.eva-is-zoom {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  display: grid;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, #fff 55%, transparent);
+  border-radius: 50%;
+  background: color-mix(in srgb, #1f2330 72%, transparent);
+  color: #fff;
+  cursor: pointer;
+  opacity: 0;
+  transform: translateY(3px);
+  transition: opacity var(--eva-ease), transform var(--eva-ease), background var(--eva-ease);
+  place-items: center;
+}
+
+.eva-is-card:hover .eva-is-zoom,
+.eva-is-card:focus-within .eva-is-zoom {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.eva-is-zoom:hover,
+.eva-is-zoom:focus-visible {
+  outline: none;
+  background: var(--eva-primary);
+}
+
+.eva-is-card strong {
+  overflow: hidden;
+  color: var(--eva-text);
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.eva-is-card em {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--eva-text-sub);
+  font-size: 11.5px;
+  font-style: normal;
+  line-height: 1.35;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.eva-is-empty {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 14px;
+  border: 1px dashed var(--eva-border);
+  border-radius: var(--eva-radius);
+  color: var(--eva-text-mute);
+  text-align: center;
+}
+
+.eva-is-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  display: flex;
+  padding: 28px;
+  background: color-mix(in srgb, #0f1115 78%, transparent);
+  align-items: center;
+  justify-content: center;
+}
+
+.eva-is-lightbox-card {
+  position: relative;
+  display: flex;
+  width: min(920px, 92vw);
+  max-height: 88vh;
+  padding: 14px;
+  border: 1px solid color-mix(in srgb, #fff 14%, transparent);
+  border-radius: calc(var(--eva-radius) + 6px);
+  background: var(--eva-surface);
+  box-shadow: 0 24px 80px color-mix(in srgb, #000 42%, transparent);
+  flex-direction: column;
+  gap: 10px;
+}
+
+.eva-is-lightbox-card img {
+  display: block;
+  width: 100%;
+  max-height: calc(88vh - 78px);
+  border-radius: var(--eva-radius);
+  object-fit: contain;
+  background: var(--eva-soft);
+}
+
+.eva-is-lightbox-card strong {
+  color: var(--eva-text);
+  font-size: 13px;
+  text-align: center;
+}
+
+.eva-is-lightbox-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+  display: grid;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: color-mix(in srgb, #1f2330 74%, transparent);
+  color: #fff;
+  cursor: pointer;
+  place-items: center;
+}
+
+.eva-is-lightbox-close:hover,
+.eva-is-lightbox-close:focus-visible {
+  outline: none;
+  background: var(--eva-primary);
+}
+
 .eva-f-input {
   width: 100%;
   height: 26px;

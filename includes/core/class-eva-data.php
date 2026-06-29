@@ -109,7 +109,7 @@ class Data
                 $val  = array_key_exists($id, $raw) ? $raw[$id] : null;
                 $clean[$id] = ($type === 'accordion')
                     ? self::sanitize_accordion($field, $val)
-                    : self::sanitize_field($type, $val);
+                    : self::sanitize_field($type, $val, $field);
             }
         }
         return $clean;
@@ -118,15 +118,16 @@ class Data
     /**
      * 按字段类型清洗单个值。
      *
-     * 注意（迁移须知）：当前仅覆盖 switcher / textarea / select / color / icon / upload / accordion / text 八类，其余类型都会落到
+     * 注意（迁移须知）：当前仅覆盖 switcher / textarea / select / color / color_group / icon / upload / image_select / accordion / text 等类型，其余类型都会落到
      * default 分支被强制转成字符串。对「值为数组」的字段（group/repeater/checkbox/gallery 等），
      * 这会破坏数据——迁移此类字段前必须在此补对应分支。
      *
      * @param string $type 字段类型标识。
      * @param mixed  $val  原始值（可能为 null / 标量 / 数组）。
+     * @param array  $field 字段 schema，供有限选项类字段校验合法值。
      * @return mixed       清洗后的值。
      */
-    public static function sanitize_field($type, $val)
+    public static function sanitize_field($type, $val, $field = [])
     {
         switch ($type) {
             case 'switcher':
@@ -137,16 +138,76 @@ class Data
                 return sanitize_textarea_field((string) $val);
             case 'color':
                 return self::sanitize_color($val);
+            case 'color_group':
+                return self::sanitize_color_group($val);
             case 'icon':
                 return self::sanitize_icon($val);
             case 'upload':
                 return self::sanitize_upload($val);
+            case 'image_select':
+                return self::sanitize_image_select($field, $val);
             case 'select':
             case 'text':
             default:
                 // 其余（含未识别类型）按单行文本清洗——数组型字段在此会被损坏，详见上方注意。
                 return sanitize_text_field((string) $val);
         }
+    }
+
+    /**
+     * 清洗图像选择字段：只允许保存 options 中声明过的选项值。
+     *
+     * @param array $field 字段 schema。
+     * @param mixed $val   原始选中值。
+     * @return string      合法选项值；无效时回退到合法 default 或空字符串。
+     */
+    public static function sanitize_image_select($field, $val)
+    {
+        $allowed = self::image_select_values(isset($field['options']) ? $field['options'] : []);
+        $value = sanitize_text_field((string) $val);
+
+        if (in_array($value, $allowed, true)) {
+            return $value;
+        }
+
+        $default = isset($field['default']) ? sanitize_text_field((string) $field['default']) : '';
+        return in_array($default, $allowed, true) ? $default : '';
+    }
+
+    /**
+     * 从 image_select options 中提取允许保存的 value/key。
+     *
+     * @param mixed $options 字段选项。
+     * @return string[]      合法值列表。
+     */
+    private static function image_select_values($options)
+    {
+        if (! is_array($options)) {
+            return [];
+        }
+
+        $values = [];
+        foreach ($options as $key => $item) {
+            if (is_array($item)) {
+                if (isset($item['value'])) {
+                    $values[] = sanitize_text_field((string) $item['value']);
+                } elseif (isset($item['id'])) {
+                    $values[] = sanitize_text_field((string) $item['id']);
+                } elseif (! is_int($key)) {
+                    $values[] = sanitize_text_field((string) $key);
+                }
+                continue;
+            }
+
+            $raw_value = is_int($key)
+                ? (is_scalar($item) ? $item : '')
+                : $key;
+            $values[] = sanitize_text_field((string) $raw_value);
+        }
+
+        return array_values(array_unique(array_filter($values, static function ($value) {
+            return $value !== '';
+        })));
     }
 
     /**
@@ -179,6 +240,28 @@ class Data
         }
 
         return '';
+    }
+
+    /**
+     * 清洗颜色组：保留合法 HEX/RGBA 颜色并重排索引。
+     *
+     * @param mixed $val 原始颜色数组。
+     * @return array<int,string> 清洗后的颜色数组。
+     */
+    public static function sanitize_color_group($val)
+    {
+        if (! is_array($val)) {
+            return [];
+        }
+
+        $out = [];
+        foreach ($val as $item) {
+            $color = self::sanitize_color($item);
+            if ($color !== '') {
+                $out[] = $color;
+            }
+        }
+        return array_values($out);
     }
 
     /**

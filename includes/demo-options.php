@@ -137,6 +137,36 @@ if (! function_exists('eva_demo_recent_activities')) {
     }
 }
 
+if (! function_exists('eva_demo_image_select_preview')) {
+    /**
+     * 生成 image_select 演示用 SVG 预览图，避免依赖额外图片资源。
+     *
+     * @param string $variant 预览变体：card/list/grid/minimal。
+     * @return string         data URI，可直接作为字段 option 的 url。
+     */
+    function eva_demo_image_select_preview($variant)
+    {
+        $variant = sanitize_key($variant);
+        $accent  = '#FF758C';
+        $muted   = '#E8EAF0';
+        $soft    = '#F7F8FA';
+        $text    = '#B8BECA';
+
+        if ($variant === 'list') {
+            $body = '<rect x="18" y="20" width="36" height="24" rx="4" fill="' . $muted . '"/><rect x="64" y="22" width="72" height="6" rx="3" fill="' . $accent . '" opacity=".35"/><rect x="64" y="34" width="96" height="5" rx="2.5" fill="' . $text . '" opacity=".65"/><rect x="18" y="58" width="36" height="24" rx="4" fill="' . $muted . '"/><rect x="64" y="60" width="86" height="6" rx="3" fill="' . $text . '" opacity=".65"/><rect x="64" y="72" width="66" height="5" rx="2.5" fill="' . $text . '" opacity=".45"/>';
+        } elseif ($variant === 'grid') {
+            $body = '<rect x="18" y="18" width="42" height="30" rx="4" fill="' . $accent . '" opacity=".28"/><rect x="68" y="18" width="42" height="30" rx="4" fill="' . $muted . '"/><rect x="118" y="18" width="42" height="30" rx="4" fill="' . $muted . '"/><rect x="18" y="58" width="42" height="30" rx="4" fill="' . $muted . '"/><rect x="68" y="58" width="42" height="30" rx="4" fill="' . $muted . '"/><rect x="118" y="58" width="42" height="30" rx="4" fill="' . $accent . '" opacity=".22"/>';
+        } elseif ($variant === 'minimal') {
+            $body = '<rect x="20" y="20" width="140" height="10" rx="5" fill="' . $accent . '" opacity=".32"/><rect x="20" y="42" width="110" height="7" rx="3.5" fill="' . $text . '" opacity=".7"/><rect x="20" y="60" width="132" height="7" rx="3.5" fill="' . $text . '" opacity=".45"/><rect x="20" y="78" width="88" height="7" rx="3.5" fill="' . $text . '" opacity=".45"/>';
+        } else {
+            $body = '<rect x="18" y="18" width="56" height="52" rx="6" fill="' . $accent . '" opacity=".28"/><rect x="86" y="22" width="72" height="8" rx="4" fill="' . $text . '" opacity=".7"/><rect x="86" y="40" width="56" height="6" rx="3" fill="' . $text . '" opacity=".45"/><rect x="86" y="56" width="78" height="6" rx="3" fill="' . $text . '" opacity=".35"/><rect x="18" y="78" width="146" height="10" rx="5" fill="' . $muted . '"/>';
+        }
+
+        $svg = '<svg xmlns="http://www.w3.org/2000/svg" width="180" height="106" viewBox="0 0 180 106"><rect width="180" height="106" rx="10" fill="' . $soft . '"/>' . $body . '</svg>';
+        return 'data:image/svg+xml;charset=UTF-8,' . rawurlencode($svg);
+    }
+}
+
 // ============================================================================
 // 演示设置页注册：先建容器（createOptions），再加左侧菜单树（addMenuItem），
 // 最后逐区追加字段（createSection）。
@@ -193,8 +223,15 @@ if (! function_exists('eva_demo_recent_activities')) {
     'icon'   => 'ri-equalizer-line',
     'fields' => [
         ['id' => 'primary_color', 'type' => 'color', 'title' => '主色调', 'default' => '#FF4D7F', 'alpha' => true, 'presets' => ['#FF4D7F', '#EF4444', '#F97316', '#FACC15', '#22C55E', '#38BDF8', '#3B82F6', '#8B5CF6', '#64748B'], 'desc' => '用于按钮、链接、强调状态等主要视觉元素。', 'width' => '1/3'],
+        ['id' => 'brand_colors', 'type' => 'color_group', 'title' => '品牌色组', 'group_title' => '品牌色组', 'group_desc' => '用于主题配色、图表颜色或模块强调色配置。', 'default' => ['#FF4D8D', '#FF6B6B', '#FFD166', '#06D6A0', '#4D96FF', '#9B5DE5'], 'presets' => ['#FF4D8D', '#FF6B6B', '#FFD166', '#06D6A0', '#4D96FF', '#9B5DE5', '#222222', '#FFFFFF'], 'max_colors' => 8, 'sortable' => true, 'required' => true, 'width' => 'full'],
         ['id' => 'feature_icon', 'type' => 'icon', 'title' => '功能图标', 'default' => 'ri-star-fill', 'library' => 'remix', 'placeholder' => '请选择一个图标', 'desc' => '请选择一个合适的图标，用于功能展示。', 'required' => false, 'width' => '1/3'],
         ['id' => 'cover_image', 'type' => 'upload', 'title' => '封面图片', 'desc' => '建议尺寸：1920x1080 像素，支持 jpg、png、webp 格式，最大 5MB。', 'default' => '', 'library' => 'image', 'button_title' => '选择图片', 'placeholder' => '点击或拖拽图片到此处', 'preview' => true, 'width' => '1/3'],
+        ['id' => 'layout_style', 'type' => 'image_select', 'title' => '图像选择', 'desc' => '用图片缩略图选择布局或风格，保存值为选项 key。', 'default' => 'card', 'columns' => 4, 'min_width' => 138, 'aspect_ratio' => '16 / 9', 'object_fit' => 'cover', 'zoom' => true, 'width' => 'full', 'options' => [
+            'card'    => ['label' => '卡片布局', 'url' => eva_demo_image_select_preview('card')],
+            'list'    => ['label' => '列表布局', 'url' => eva_demo_image_select_preview('list')],
+            'grid'    => ['label' => '网格布局', 'url' => eva_demo_image_select_preview('grid')],
+            'minimal' => ['label' => '极简布局', 'url' => eva_demo_image_select_preview('minimal')],
+        ]],
         ['id' => 'site_slogan', 'type' => 'text', 'title' => '站点标语', 'desc' => '显示在首页的一句话', 'default' => '', 'placeholder' => '请输入标语', 'width' => '1/3'],
         ['id' => 'enable_feature', 'type' => 'switcher', 'title' => '启用示例功能', 'desc' => '开启或关闭', 'default' => false, 'width' => '1/3'],
         ['id' => 'settings_accordion', 'type' => 'accordion', 'title' => '手风琴设置', 'desc' => '将相关配置按折叠区组织，提升复杂表单可读性。', 'default_open' => ['basic'], 'closed_icon' => 'ri-arrow-down-s-line', 'open_icon' => 'ri-arrow-up-s-line', 'width' => 'full', 'sections' => [
