@@ -111,13 +111,15 @@
   var REMIX_CACHE = null;
   var REMIX_CSS = 'https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css';
 
-  function toItems(list) {
+  // Purpose: Convert icon tuples into picker item objects.
+  function To_Items(list) {
     return list.map(function (x) {
       return { value: x[0], label: x[1], cat: x[2] };
     });
   }
 
-  function libraryKey(value) {
+  // Purpose: Normalize icon library aliases into internal keys.
+  function Library_Key(value) {
     value = String(value || '').toLowerCase();
     if (value === 'fontawesome' || value === 'font-awesome') { return 'fa'; }
     if (value === 'dashicon') { return 'dashicons'; }
@@ -126,7 +128,8 @@
     return value || 'remix';
   }
 
-  function remixCategory(value) {
+  // Purpose: Infer a Remixicon category from its class name.
+  function Remix_Category(value) {
     if (/ri-(arrow|skip|corner|expand|collapse|login|logout|drag|scroll|route)/.test(value)) { return 'direction'; }
     if (/ri-(image|gallery|camera|movie|video|music|volume|mic|play|pause|record|radio|dvd|disc|live|broadcast)/.test(value)) { return 'media'; }
     if (/ri-(github|wordpress|twitter|facebook|wechat|youtube|google|apple|android|windows|qq|weibo|instagram|linkedin|tiktok|telegram|discord|paypal|amazon|chrome|edge|firefox)/.test(value)) { return 'brand'; }
@@ -134,7 +137,8 @@
     return 'interface';
   }
 
-  function labelFromIcon(value) {
+  // Purpose: Create a readable label from an icon class name.
+  function Label_From_Icon(value) {
     return String(value || '').replace(/^ri-/, '').replace(/-(line|fill)$/, '').replace(/-/g, ' ');
   }
 
@@ -147,6 +151,7 @@
       defaultValue: { type: String, default: '' }
     },
     emits: ['update:modelValue'],
+    // Purpose: Initialize component state and exposed reactive data.
     data: function () {
       return {
         open: false,
@@ -159,15 +164,18 @@
       };
     },
     computed: {
+      // Purpose: Handle lib behavior.
       lib: function () {
-        return libraryKey(this.library || this.set || 'remix');
+        return Library_Key(this.library || this.set || 'remix');
       },
+      // Purpose: Handle items behavior.
       items: function () {
-        if (this.lib === 'fa') { return toItems(FA_ITEMS); }
-        if (this.lib === 'dashicons') { return toItems(DASH_ITEMS); }
+        if (this.lib === 'fa') { return To_Items(FA_ITEMS); }
+        if (this.lib === 'dashicons') { return To_Items(DASH_ITEMS); }
         if (this.lib === 'svg') { return this.svgItems; }
-        return this.remixItems.length ? this.remixItems : toItems(REMIX_ITEMS);
+        return this.remixItems.length ? this.remixItems : To_Items(REMIX_ITEMS);
       },
+      // Purpose: Handle categories behavior.
       categories: function () {
         var seen = { all: true };
         var out = [{ id: 'all', label: CAT_LABELS.all }];
@@ -179,6 +187,7 @@
         });
         return out;
       },
+      // Purpose: Handle visible Items behavior.
       visibleItems: function () {
         var q = this.query.trim().toLowerCase();
         var cat = this.activeCat;
@@ -188,12 +197,15 @@
           return inCat && hit;
         });
       },
+      // Purpose: Handle display Value behavior.
       displayValue: function () {
         return this.modelValue || '';
       },
+      // Purpose: Handle preview Class behavior.
       previewClass: function () {
         return this.iconClass(this.displayValue || this.defaultValue || this.draft);
       },
+      // Purpose: Handle draft Class behavior.
       draftClass: function () {
         return this.iconClass(this.draft);
       }
@@ -201,10 +213,12 @@
     watch: {
       modelValue: {
         immediate: true,
+        // Purpose: React to watched value changes.
         handler: function (value) {
           this.draft = this.normalizeValue(value || this.defaultValue || '');
         }
       },
+      // Purpose: Handle lib behavior.
       lib: function () {
         this.activeCat = 'common';
         this.draft = this.normalizeValue(this.modelValue || this.defaultValue || '');
@@ -212,15 +226,18 @@
         if (this.lib === 'svg') { this.scanSvgSymbols(); }
       }
     },
+    // Purpose: Run component mount initialization.
     mounted: function () {
       document.addEventListener('mousedown', this.onDocumentDown, true);
       if (this.lib === 'remix') { this.ensureRemixItems(); }
       if (this.lib === 'svg') { this.scanSvgSymbols(); }
     },
+    // Purpose: Clean up listeners, timers, or temporary state before unmount.
     beforeUnmount: function () {
       document.removeEventListener('mousedown', this.onDocumentDown, true);
     },
     methods: {
+      // Purpose: Normalize normalize Value data.
       normalizeValue: function (value) {
         value = String(value || '').trim();
         if (this.lib === 'fa') {
@@ -234,6 +251,7 @@
         }
         return value;
       },
+      // Purpose: Handle icon Class behavior.
       iconClass: function (value) {
         value = this.normalizeValue(value);
         if (!value) { return 'ri-star-line'; }
@@ -242,13 +260,16 @@
         if (this.lib === 'dashicons') { return 'dashicons dashicons-' + value; }
         return value.indexOf('ri-') === 0 ? value : ('ri-' + value);
       },
+      // Purpose: Check is Symbol state.
       isSymbol: function (value) {
         value = this.normalizeValue(value);
         return value.charAt(0) === '#';
       },
+      // Purpose: Handle symbol Href behavior.
       symbolHref: function (value) {
         return this.normalizeValue(value);
       },
+      // Purpose: Handle scan Svg Symbols behavior.
       scanSvgSymbols: function () {
         var nodes = document.querySelectorAll('symbol[id]');
         var out = [];
@@ -259,6 +280,7 @@
         }
         this.svgItems = out.sort(function (a, b) { return a.value.localeCompare(b.value); });
       },
+      // Purpose: Handle ensure Remix Items behavior.
       ensureRemixItems: function () {
         var self = this;
         if (REMIX_CACHE && REMIX_CACHE.length) {
@@ -278,7 +300,7 @@
               var value = 'ri-' + match[1];
               if (seen[value]) { continue; }
               seen[value] = true;
-              items.push({ value: value, label: labelFromIcon(value), cat: remixCategory(value) });
+              items.push({ value: value, label: Label_From_Icon(value), cat: Remix_Category(value) });
             }
             if (items.length) {
               REMIX_CACHE = items.sort(function (a, b) { return a.value.localeCompare(b.value); });
@@ -288,6 +310,7 @@
           .catch(function () {})
           .finally(function () { self.remixLoading = false; });
       },
+      // Purpose: Toggle toggle state.
       toggle: function () {
         this.open = !this.open;
         if (this.open) {
@@ -297,29 +320,36 @@
           if (this.lib === 'svg') { this.scanSvgSymbols(); }
         }
       },
+      // Purpose: Close close UI or state.
       close: function () {
         this.open = false;
       },
+      // Purpose: Handle on Document Down behavior.
       onDocumentDown: function (event) {
         if (!this.open || !this.$el || this.$el.contains(event.target)) { return; }
         this.close();
       },
+      // Purpose: Update set Draft state.
       setDraft: function (item) {
         this.draft = item.value;
       },
+      // Purpose: Handle commit Input behavior.
       commitInput: function (event) {
         this.$emit('update:modelValue', this.normalizeValue(event.target.value));
       },
+      // Purpose: Handle clear behavior.
       clear: function () {
         this.draft = '';
         this.$emit('update:modelValue', '');
         this.close();
       },
+      // Purpose: Handle reset behavior.
       reset: function () {
         var value = this.normalizeValue(this.defaultValue || '');
         this.draft = value;
         this.$emit('update:modelValue', value);
       },
+      // Purpose: Handle apply behavior.
       apply: function () {
         this.$emit('update:modelValue', this.normalizeValue(this.draft));
         this.close();

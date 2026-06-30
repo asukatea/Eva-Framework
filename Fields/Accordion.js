@@ -14,7 +14,8 @@
 (function () {
   window.EvaFields = window.EvaFields || {};
 
-  function clone(value) {
+  // Purpose: Copy object values before mutating model state.
+  function Clone(value) {
     if (!value || typeof value !== 'object' || Array.isArray(value)) { return {}; }
     return Object.assign({}, value);
   }
@@ -23,32 +24,39 @@
     props: ['field', 'modelValue'],
     emits: ['update:modelValue'],
     methods: {
+      // Purpose: Handle tv behavior.
       tv: function (value) {
         return window.EvaI18n && window.EvaI18n.tv ? window.EvaI18n.tv(value) : (value || '');
       },
+      // Purpose: Handle sections behavior.
       sections: function () {
         return Array.isArray(this.field.sections) ? this.field.sections : [];
       },
+      // Purpose: Handle section Id behavior.
       sectionId: function (section, index) {
         return String(section.id || section.key || index);
       },
+      // Purpose: Handle section Values behavior.
       sectionValues: function (section, index) {
-        var all = clone(this.modelValue);
+        var all = Clone(this.modelValue);
         var id = this.sectionId(section, index);
         return all[id] && typeof all[id] === 'object' && !Array.isArray(all[id]) ? all[id] : {};
       },
+      // Purpose: Handle child Value behavior.
       childValue: function (section, index, child) {
         var values = this.sectionValues(section, index);
         return Object.prototype.hasOwnProperty.call(values, child.id) ? values[child.id] : (child.default !== undefined ? child.default : '');
       },
+      // Purpose: Update update Child state.
       updateChild: function (section, index, child, value) {
-        var all = clone(this.modelValue);
+        var all = Clone(this.modelValue);
         var id = this.sectionId(section, index);
         var values = all[id] && typeof all[id] === 'object' && !Array.isArray(all[id]) ? Object.assign({}, all[id]) : {};
         values[child.id] = value;
         all[id] = values;
         this.$emit('update:modelValue', all);
       },
+      // Purpose: Handle field Col behavior.
       fieldCol: function (field) {
         var map = {
           'full': 'eva-acc-col-12', '1': 'eva-acc-col-12', '1/1': 'eva-acc-col-12',

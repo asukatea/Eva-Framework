@@ -27,12 +27,14 @@
   window.EvaFields = window.EvaFields || {};
 
   // 读取 Eva 注入的运行时配置，主要用于 REST 根地址、REST nonce 和 admin-ajax 地址。
-  function cfg() { return (window.EvaFW && window.EvaFW.config) || {}; }
-  function restBase() { return (cfg().restUrl || '/wp-json/').replace(/\/+$/, '') + '/'; }
+  function Cfg() { return (window.EvaFW && window.EvaFW.config) || {}; }
+  // Purpose: Build the WordPress REST API base URL.
+  function Rest_Base() { return (Cfg().restUrl || '/wp-json/').replace(/\/+$/, '') + '/'; }
 
   window.EvaFields.backup = {
     props: ['field', 'modelValue'],
     emits: ['update:modelValue'],
+    // Purpose: Initialize component state and exposed reactive data.
     data: function () {
       return {
         // 页面数据状态：loading 控制骨架/加载态，error 用于展示请求或操作错误。
@@ -56,21 +58,30 @@
     computed: {
       // 小时 / 分钟选项由计算属性生成，避免在 data 里维护重复数组。
       hourOptions: function () { var a = []; for (var i = 0; i < 24; i++) { a.push(('0' + i).slice(-2)); } return a; },
+      // Purpose: Handle minute Options behavior.
       minuteOptions: function () { var a = []; for (var i = 0; i < 60; i++) { a.push(('0' + i).slice(-2)); } return a; },
       // 自动备份时间拆分为两个 eva-select（小时 + 分钟）编辑，最终仍写回 settings.time。
       hour: {
+        // Purpose: Read or write the computed property state.
         get: function () { return ('0' + (parseInt((this.settings.time || '00:00').split(':')[0], 10) || 0)).slice(-2); },
+        // Purpose: Read or write the computed property state.
         set: function (v) { var m = (this.settings.time || '00:00').split(':')[1] || '00'; this.settings.time = v + ':' + m; }
       },
       minute: {
+        // Purpose: Read or write the computed property state.
         get: function () { return ('0' + (parseInt((this.settings.time || '00:00').split(':')[1], 10) || 0)).slice(-2); },
+        // Purpose: Read or write the computed property state.
         set: function (v) { var h = (this.settings.time || '00:00').split(':')[0] || '00'; this.settings.time = h + ':' + v; }
       },
       // 接口返回的 card 聚合统计，模板中的统计卡都从这里派生。
       card: function () { return (this.data && this.data.card) || {}; },
+      // Purpose: Handle latest behavior.
       latest: function () { return this.card.latest || {}; },
+      // Purpose: Handle auto Card behavior.
       autoCard: function () { return this.card.auto || {}; },
+      // Purpose: Handle available behavior.
       available: function () { return this.card.available || {}; },
+      // Purpose: Handle list behavior.
       list: function () { return (this.data && this.data.list) || []; },
       // 历史备份列表的展示增强：补充类型文案和备份内容标签（按当前语言翻译）。
       parsedList: function () {
@@ -95,12 +106,19 @@
           return okTab && okKey;
         });
       },
+      // Purpose: Handle storage behavior.
       storage: function () { return this.card.storage || {}; },
+      // Purpose: Handle trend behavior.
       trend: function () { return this.card.trend || []; },
+      // Purpose: Handle counts behavior.
       counts: function () { return this.card.counts || {}; },
+      // Purpose: Handle health behavior.
       health: function () { return this.card.health || []; },
+      // Purpose: Handle queue behavior.
       queue: function () { return this.card.queue || []; },
+      // Purpose: Handle activities behavior.
       activities: function () { return this.card.activities || []; },
+      // Purpose: Handle latest Items Label behavior.
       latestItemsLabel: function () {
         var self = this;
         var typeMap = { main: self.t('bk_theme'), nav: self.t('bk_t_nav'), widgets: self.t('bk_t_widgets'), customizer: self.t('bk_t_customizer') };
@@ -123,8 +141,10 @@
         var m = this.counts.manual || 0, a = this.counts.automatic || 0, total = m + a;
         return total ? Math.round(a / total * 100) : 0;
       },
+      // Purpose: Handle estimate behavior.
       estimate: function () { return this.card.estimate || {}; }
     },
+    // Purpose: Run component mount initialization.
     mounted: function () { this.fetchData(); },
     methods: {
       // 全局 i18n 代理：模板与逻辑统一用 this.t('key')；内部读 EvaI18nState.lang，切换语言自动重渲染。
@@ -139,6 +159,7 @@
         var m = { '备份服务状态': 'bk_h_service', '存储空间状态': 'bk_h_storage', '数据库连接': 'bk_h_db', '文件系统权限': 'bk_h_fs' };
         return m[v] ? this.t(m[v]) : v;
       },
+      // Purpose: Handle health Label behavior.
       healthLabel: function (v) {
         var m = { '正常': 'bk_h_normal', '良好': 'bk_good', '异常': 'bk_h_error', '警告': 'bk_h_warn' };
         return m[v] ? this.t(m[v]) : v;
@@ -146,7 +167,7 @@
       // 拉取完整备份面板数据，成功后同步自动备份设置；失败时只显示错误，不破坏旧数据。
       fetchData: function () {
         var self = this; self.loading = true;
-        fetch(restBase() + 'lf/v2/backupData', { credentials: 'same-origin', headers: { 'X-WP-Nonce': cfg().restNonce || '' } })
+        fetch(Rest_Base() + 'lf/v2/backupData', { credentials: 'same-origin', headers: { 'X-WP-Nonce': Cfg().restNonce || '' } })
           .then(function (r) { if (!r.ok) { throw new Error('HTTP ' + r.status); } return r.json(); })
           .then(function (j) {
             self.data = (j && j[0]) ? j[0] : { card: {}, list: [], auto: {} };
@@ -171,7 +192,7 @@
           if (Array.isArray(v)) { v.forEach(function (x) { fd.append(k + '[]', x); }); }
           else { fd.append(k, v); }
         });
-        return fetch(cfg().ajaxUrl, { method: 'POST', credentials: 'same-origin', body: fd })
+        return fetch(Cfg().ajaxUrl, { method: 'POST', credentials: 'same-origin', body: fd })
           .then(function (r) { return r.json().catch(function () { return {}; }); });
       },
       // 创建手动备份；成功后刷新面板数据，失败时在页面顶部显示错误。
@@ -210,6 +231,7 @@
           })
           .catch(function () { self.error = self.t('bk_req_fail'); });
       },
+      // Purpose: Handle clear Selected behavior.
       clearSelected: function () {
         this.pendingFile = null;
         this.selectedFile = { name: '', size: '' };
@@ -217,8 +239,8 @@
       // 下载备份文件：接口返回 blob 后临时创建 <a download> 触发浏览器下载。
       downloadBackup: function (id, name) {
         var self = this;
-        fetch(restBase() + 'lf/v2/downloadBackup?id=' + encodeURIComponent(id), {
-          credentials: 'same-origin', headers: { 'X-WP-Nonce': cfg().restNonce || '' }
+        fetch(Rest_Base() + 'lf/v2/downloadBackup?id=' + encodeURIComponent(id), {
+          credentials: 'same-origin', headers: { 'X-WP-Nonce': Cfg().restNonce || '' }
         })
           .then(function (r) { return r.blob(); })
           .then(function (blob) {

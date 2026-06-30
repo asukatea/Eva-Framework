@@ -27,23 +27,25 @@
     return;
   }
 
-  // EvaFW.config 由 PHP 在后台页 / 独立页注入，集中提供 REST 地址、nonce 等运行时配置。
-  function cfg() { return (window.EvaFW && window.EvaFW.config) || {}; }
-  function restBase() { return (cfg().restUrl || '/wp-json/').replace(/\/+$/, '') + '/'; }
-  function nonce() { return cfg().restNonce || cfg().nonce || ''; }
+  // EvaFW.config 由 PHP 在后台页 / 独立页注入，集中提供 REST 地址、Nonce 等运行时配置。
+  function Cfg() { return (window.EvaFW && window.EvaFW.config) || {}; }
+  // Purpose: Build the WordPress REST API base URL.
+  function Rest_Base() { return (Cfg().restUrl || '/wp-json/').replace(/\/+$/, '') + '/'; }
+  // Purpose: Read the nonce used by REST requests.
+  function Nonce() { return Cfg().restNonce || Cfg().nonce || ''; }
 
   /**
    * 调用主题侧更新 API 的统一封装。
    *
    * 注意：
    * - 这里仅做 JSON 解析兜底，不在封装层吞掉业务错误。
-   * - REST permission 依赖 WordPress nonce 和当前用户能力，前端只负责带上 `X-WP-Nonce`。
+   * - REST permission 依赖 WordPress Nonce 和当前用户能力，前端只负责带上 `X-WP-Nonce`。
    */
-  function api(path, opts) {
+  function Api(path, opts) {
     opts = opts || {};
-    return fetch(restBase() + 'lf/v2/' + path, {
+    return fetch(Rest_Base() + 'lf/v2/' + path, {
       method: opts.method || 'GET',
-      headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': nonce() },
+      headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': Nonce() },
       body: opts.body ? JSON.stringify(opts.body) : undefined
     }).then(function (r) { return r.json().catch(function () { return {}; }); });
   }
@@ -55,7 +57,7 @@
    * - 防止某个 data-* 被主题、缓存插件或手工编辑破坏后导致整页无法挂载。
    * - 失败时回退为空对象 / 空数组，由模板负责显示空状态。
    */
-  function parseData(el) {
+  function Parse_Data(el) {
     var d = el.dataset || {};
     var schedule = {}, logs = [], activities = [];
     try { schedule = JSON.parse(d.schedule || '{}') || {}; } catch (e) { schedule = {}; }
@@ -77,9 +79,11 @@
   }
 
   // 计划更新时间使用两个 eva-select（小时 / 分钟），这里生成 00-23 / 00-59 的选项表。
-  function pad2(n) { return String(n).padStart(2, '0'); }
-  function rangeMap(max) { var m = {}; for (var i = 0; i < max; i++) { m[pad2(i)] = pad2(i); } return m; }
-  function splitTime(t) { var p = String(t || '03:00').split(':'); return { h: pad2((parseInt(p[0], 10) || 0)), m: pad2((parseInt(p[1], 10) || 0)) }; }
+  function Pad_2(n) { return String(n).padStart(2, '0'); }
+  // Purpose: Build sequential option maps for select controls.
+  function Range_Map(max) { var m = {}; for (var i = 0; i < max; i++) { m[Pad_2(i)] = Pad_2(i); } return m; }
+  // Purpose: Split HH:mm text into hour and minute values.
+  function Split_Time(t) { var p = String(t || '03:00').split(':'); return { h: Pad_2((parseInt(p[0], 10) || 0)), m: Pad_2((parseInt(p[1], 10) || 0)) }; }
 
   // REST 与后端 option 使用英文枚举；UI 展示统一映射为中文。
   var FREQ = [['everyday', '每天'], ['monday', '周一'], ['tuesday', '周二'], ['wednesday', '周三'], ['thursday', '周四'], ['friday', '周五'], ['saturday', '周六'], ['sunday', '周日']];
@@ -170,11 +174,13 @@
     '  </div>' +
     '</div>';
 
-  function createUpdateApp(el) {
-    var init = parseData(el);
+  // Purpose: Create the standalone update dashboard Vue app.
+  function Create_Update_App(el) {
+    var init = Parse_Data(el);
     var app = window.Vue.createApp({
+      // Purpose: Initialize component state and exposed reactive data.
       data: function () {
-        var t = splitTime(init.schedule.time);
+        var t = Split_Time(init.schedule.time);
         return {
           d: init,
           banner: 'https://www.dmoe.cc/random.php',
@@ -187,8 +193,8 @@
           form: { enabled: init.schedule.enabled, hour: t.h, minute: t.m, frequency: init.schedule.frequency },
           freqOptions: FREQ,
           freqMap: { everyday: '每天', monday: '周一', tuesday: '周二', wednesday: '周三', thursday: '周四', friday: '周五', saturday: '周六', sunday: '周日' },
-          hourMap: rangeMap(24),
-          minuteMap: rangeMap(60),
+          hourMap: Range_Map(24),
+          minuteMap: Range_Map(60),
           selectedLogIndex: 0,
           notice: { msg: '', type: 'info' },
           channel: '稳定版',
@@ -208,8 +214,11 @@
         hasUpdate: function () {
           return this.cmp((this.d.latestVersion || '').replace(/^Version\s+/i, '').trim(), this.d.version) > 0;
         },
+        // Purpose: Handle shown Logs behavior.
         shownLogs: function () { return this.d.logs.slice(0, this.logLimit); },
+        // Purpose: Handle latest Log behavior.
         latestLog: function () { return this.d.logs[0] || {}; },
+        // Purpose: Handle selected Log behavior.
         selectedLog: function () { return this.d.logs[this.selectedLogIndex] || this.latestLog; },
         // tabs 轨道由左右按钮驱动，偏移量必须被实测的最大滚动距离限制，避免最右侧留空。
         tabOffset: function () {
@@ -225,13 +234,16 @@
           for (var i = 0; i < Math.max(pa.length, pb.length); i++) { var x = (pa[i] || 0) - (pb[i] || 0); if (x) { return x; } }
           return 0;
         },
+        // Purpose: Handle freq Label behavior.
         freqLabel: function (f) {
           for (var i = 0; i < FREQ.length; i++) { if (FREQ[i][0] === f) { return FREQ[i][1]; } }
           return f || '每天';
         },
+        // Purpose: Handle prev Log behavior.
         prevLog: function () {
           if (this.selectedLogIndex > 0) { this.selectedLogIndex--; }
         },
+        // Purpose: Handle next Log behavior.
         nextLog: function () {
           if (this.selectedLogIndex < this.d.logs.length - 1) { this.selectedLogIndex++; }
         },
@@ -254,6 +266,7 @@
             this.timeline = res.activities;
           }
         },
+        // Purpose: Update set Notice state.
         setNotice: function (msg, type) {
           var self = this;
           this.notice = { msg: msg, type: type || 'info' };
@@ -264,7 +277,7 @@
         saveSchedule: function () {
           var self = this;
           var time = self.form.hour + ':' + self.form.minute;
-          api('SaveUpdateSchedule', { method: 'POST', body: { enabled: self.form.enabled, time: time, frequency: self.form.frequency } })
+          Api('SaveUpdateSchedule', { method: 'POST', body: { enabled: self.form.enabled, time: time, frequency: self.form.frequency } })
             .then(function (res) { self.setNotice((res && res.message) || '保存成功', 'success'); self.d.schedule = { enabled: self.form.enabled, time: time, frequency: self.form.frequency }; self.syncActivities(res); })
             .catch(function () { self.setNotice('保存失败', 'error'); });
         },
@@ -273,14 +286,14 @@
           if (this.isUpdating || !this.hasUpdate) { return; }
           this.isUpdating = true; this.showModal = true; this.download = 0; this.install = 0;
           var self = this;
-          api('StartSystemUpdate', { method: 'POST' })
+          Api('StartSystemUpdate', { method: 'POST' })
             .then(function (res) { self.setNotice('正在检查更新...', 'info'); self.syncActivities(res); self.poll(); })
             .catch(function () { self.setNotice('更新失败', 'error'); self.isUpdating = false; self.showModal = false; });
         },
         // 下载阶段完成后调用安装接口，后端负责解压与替换主题文件。
         installPkg: function () {
           var self = this;
-          api('InstallThemePackage', { method: 'POST' })
+          Api('InstallThemePackage', { method: 'POST' })
             .then(function (res) { self.setNotice((res && res.message) || '解压中...', 'info'); self.syncActivities(res); })
             .catch(function () { self.setNotice('安装失败', 'error'); self.isUpdating = false; });
         },
@@ -289,7 +302,7 @@
           var self = this;
           if (this._timer) { clearInterval(this._timer); }
           this._timer = setInterval(function () {
-            api('GetUpdateProgress').then(function (data) {
+            Api('GetUpdateProgress').then(function (data) {
               var phase = data.phase;
               if (phase === 'download') { self.download = (data.download && data.download.percent) || 0; if (self.download >= 100) { self.installPkg(); } }
               if (phase === 'install') { self.install = (data.install && data.install.percent) || 0; }
@@ -298,6 +311,7 @@
           }, 1500);
         }
       },
+      // Purpose: Run component mount initialization.
       mounted: function () {
         var self = this;
         // tabs 轨道宽度依赖真实渲染后的 DOM，必须在 mount 后测量。
@@ -305,6 +319,7 @@
         this._resizeHandler = function () { self.updateTabMetrics(); };
         window.addEventListener('resize', this._resizeHandler);
       },
+      // Purpose: Clean up listeners, timers, or temporary state before unmount.
       beforeUnmount: function () {
         if (this._resizeHandler) {
           window.removeEventListener('resize', this._resizeHandler);
@@ -319,7 +334,8 @@
     return app;
   }
 
-  function mountWhenReady() {
+  // Purpose: Wait for the callback mount node before mounting the update app.
+  function Mount_When_Ready() {
     var tries = 0;
     var timer = setInterval(function () {
       tries++;
@@ -330,7 +346,7 @@
       }
       if (el) {
         el.setAttribute('data-eva-mounted', '1');
-        try { createUpdateApp(el).mount(el); } catch (e) { /* noop */ }
+        try { Create_Update_App(el).mount(el); } catch (e) { /* noop */ }
       }
       // Eva 主应用和 callback 字段可能异步渲染，最多等待约 120 秒，避免无限轮询。
       if (tries > 240) { clearInterval(timer); }
@@ -338,8 +354,8 @@
   }
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', mountWhenReady);
+    document.addEventListener('DOMContentLoaded', Mount_When_Ready);
   } else {
-    mountWhenReady();
+    Mount_When_Ready();
   }
 })();

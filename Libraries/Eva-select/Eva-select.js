@@ -24,7 +24,7 @@
   window.EvaUI = window.EvaUI || {};
 
   // 把一段 options 归一化为 [{value,label}]，内部统一用同一种结构渲染。
-  function normalizeList(obj) {
+  function Normalize_List(obj) {
     var its = [];
     if (Array.isArray(obj)) {
       obj.forEach(function (x) {
@@ -42,6 +42,7 @@
   window.EvaUI.Select = {
     props: ['modelValue', 'options', 'placeholder', 'searchable', 'emptyMessage', 'multiple', 'sortable'],
     emits: ['update:modelValue'],
+    // Purpose: Initialize component state and exposed reactive data.
     data: function () {
       // active 是过滤后 flatItems 的全局序号；dropUp 由触发器上下可用空间动态决定。
       return { open: false, active: -1, query: '', dropUp: false, dragIndex: null };
@@ -53,7 +54,7 @@
         var o = this.options || {};
         var out = [];
         if (Array.isArray(o)) {
-          out.push({ label: null, items: normalizeList(o) });
+          out.push({ label: null, items: Normalize_List(o) });
           return out;
         }
         if (o && typeof o === 'object') {
@@ -63,15 +64,16 @@
             if (!Object.prototype.hasOwnProperty.call(o, k)) { continue; }
             var v = o[k];
             if (v && typeof v === 'object') {
-              out.push({ label: k, items: normalizeList(v) });
+              out.push({ label: k, items: Normalize_List(v) });
             } else {
               flat[k] = v; hasFlat = true;
             }
           }
-          if (hasFlat) { out.push({ label: null, items: normalizeList(flat) }); }
+          if (hasFlat) { out.push({ label: null, items: Normalize_List(flat) }); }
         }
         return out;
       },
+      // Purpose: Handle all Items behavior.
       allItems: function () {
         var out = [];
         this.groups.forEach(function (g) { g.items.forEach(function (it) { out.push(it); }); });
@@ -93,6 +95,7 @@
         });
         return out;
       },
+      // Purpose: Handle flat Items behavior.
       flatItems: function () {
         var out = [];
         this.filteredGroups.forEach(function (g) { g.items.forEach(function (it) { out.push(it); }); });
@@ -104,26 +107,33 @@
         if (this.searchable === false || this.searchable === 'false') { return false; }
         return this.allItems.length >= 8;
       },
+      // Purpose: Handle ph behavior.
       ph: function () { return this.placeholder || '请选择'; },
+      // Purpose: Handle empty Msg behavior.
       emptyMsg: function () { return this.emptyMessage || '无匹配项'; },
+      // Purpose: Check is Multiple state.
       isMultiple: function () {
         return this.multiple === true || this.multiple === 'true';
       },
+      // Purpose: Check can Sort state.
       canSort: function () {
         return this.isMultiple && (this.sortable === true || this.sortable === 'true');
       },
+      // Purpose: Handle selected Values behavior.
       selectedValues: function () {
         if (this.isMultiple) {
           return Array.isArray(this.modelValue) ? this.modelValue.map(String) : [];
         }
         return this.modelValue == null || this.modelValue === '' ? [] : [String(this.modelValue)];
       },
+      // Purpose: Handle selected Items behavior.
       selectedItems: function () {
         var self = this;
         return this.selectedValues.map(function (value) {
           return self.allItems.filter(function (it) { return String(it.value) === value; })[0] || { value: value, label: value };
         });
       },
+      // Purpose: Handle current Label behavior.
       currentLabel: function () {
         var self = this;
         var hit = this.allItems.filter(function (it) { return String(it.value) === String(self.modelValue); })[0];
@@ -154,6 +164,7 @@
       }
     },
     methods: {
+      // Purpose: Toggle toggle state.
       toggle: function () { this.open ? this.close() : this.openMenu(); },
       // 打开面板时同步当前选中项为 active，并绑定捕获阶段的外部点击监听。
       openMenu: function () {
@@ -185,6 +196,7 @@
         var above = r.top;
         this.dropUp = (below < ph + 8) && (above > below);
       },
+      // Purpose: Handle focus Trigger behavior.
       focusTrigger: function () {
         var self = this;
         this.$nextTick(function () {
@@ -210,18 +222,22 @@
         this.close();
         this.focusTrigger();
       },
+      // Purpose: Check is Selected state.
       isSelected: function (it) {
         return this.selectedValues.indexOf(String(it.value)) !== -1;
       },
+      // Purpose: Handle remove Value behavior.
       removeValue: function (value) {
         if (!this.isMultiple) { return; }
         var values = this.selectedValues.filter(function (item) { return item !== String(value); });
         this.$emit('update:modelValue', values);
       },
+      // Purpose: Handle drag Start behavior.
       dragStart: function (index) {
         if (!this.canSort) { return; }
         this.dragIndex = index;
       },
+      // Purpose: Handle drop Value behavior.
       dropValue: function (index) {
         if (!this.canSort || this.dragIndex === null || this.dragIndex === index) {
           this.dragIndex = null;
@@ -261,6 +277,7 @@
         }
       }
     },
+    // Purpose: Clean up listeners, timers, or temporary state before unmount.
     beforeUnmount: function () {
       document.removeEventListener('mousedown', this.onDocDown, true);
     },

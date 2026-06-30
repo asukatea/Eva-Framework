@@ -16,15 +16,18 @@
 (function () {
   window.EvaFields = window.EvaFields || {};
 
-  function cfg() {
+  // Purpose: Read the Eva runtime config injected by PHP.
+  function Cfg() {
     return (window.EvaFW && window.EvaFW.config) || {};
   }
 
-  function tv(value) {
+  // Purpose: Resolve multilingual values for the current language.
+  function Tv(value) {
     return window.EvaI18n && window.EvaI18n.tv ? window.EvaI18n.tv(value) : (value || '');
   }
 
-  function postTypeParam(postType) {
+  // Purpose: Convert post_type config into the AJAX query parameter.
+  function Post_Type_Param(postType) {
     if (Array.isArray(postType)) {
       return postType.join(',');
     }
@@ -34,6 +37,7 @@
   window.EvaFields.ajax_select = {
     props: ['field', 'modelValue'],
     emits: ['update:modelValue'],
+    // Purpose: Initialize component state and exposed reactive data.
     data: function () {
       return {
         open: false,
@@ -47,27 +51,33 @@
       };
     },
     computed: {
+      // Purpose: Handle min Chars behavior.
       minChars: function () {
         return Math.max(0, parseInt(this.field.min_chars || this.field.minChars || 2, 10) || 0);
       },
+      // Purpose: Handle value Label behavior.
       valueLabel: function () {
         if (this.isMultiple) {
-          return this.selected.length ? '' : tv(this.field.placeholder || '请选择');
+          return this.selected.length ? '' : Tv(this.field.placeholder || '请选择');
         }
         if (this.selected[0] && this.selected[0].label) {
           return this.selected[0].label;
         }
-        return this.modelValue ? ('#' + this.modelValue) : tv(this.field.placeholder || '请选择');
+        return this.modelValue ? ('#' + this.modelValue) : Tv(this.field.placeholder || '请选择');
       },
+      // Purpose: Check is Placeholder state.
       isPlaceholder: function () {
         return this.isMultiple ? !this.values.length : !this.modelValue;
       },
+      // Purpose: Check is Multiple state.
       isMultiple: function () {
         return this.field.multiple === true || this.field.multiple === 'true';
       },
+      // Purpose: Check can Sort state.
       canSort: function () {
         return this.isMultiple && (this.field.sortable === true || this.field.sortable === 'true');
       },
+      // Purpose: Handle values behavior.
       values: function () {
         if (this.isMultiple) {
           return Array.isArray(this.modelValue) ? this.modelValue.map(String) : [];
@@ -75,12 +85,14 @@
         return this.modelValue ? [String(this.modelValue)] : [];
       }
     },
+    // Purpose: Run component mount initialization.
     mounted: function () {
       document.addEventListener('mousedown', this.onDocDown, true);
       if (this.values.length) {
         this.fetchItems('', this.values.join(','));
       }
     },
+    // Purpose: Clean up listeners, timers, or temporary state before unmount.
     beforeUnmount: function () {
       document.removeEventListener('mousedown', this.onDocDown, true);
       if (this.timer) {
@@ -88,12 +100,14 @@
       }
     },
     methods: {
-      tv: tv,
+      Tv: Tv,
+      // Purpose: Handle on Doc Down behavior.
       onDocDown: function (e) {
         if (this.open && this.$el && !this.$el.contains(e.target)) {
           this.close();
         }
       },
+      // Purpose: Open open Menu UI or state.
       openMenu: function () {
         if (this.field.disabled) { return; }
         this.open = true;
@@ -105,17 +119,20 @@
           }
         });
       },
+      // Purpose: Close close UI or state.
       close: function () {
         this.open = false;
         this.query = '';
         this.items = [];
         this.error = '';
       },
+      // Purpose: Handle clear behavior.
       clear: function () {
         if (this.field.disabled) { return; }
         this.selected = [];
         this.$emit('update:modelValue', this.isMultiple ? [] : '');
       },
+      // Purpose: Handle on Input behavior.
       onInput: function () {
         var self = this;
         if (this.timer) {
@@ -125,6 +142,7 @@
           self.fetchItems(self.query, 0);
         }, 220);
       },
+      // Purpose: Handle fetch Items behavior.
       fetchItems: function (query, includeId) {
         var q = (query || '').trim();
         if (!includeId && q.length < this.minChars) {
@@ -133,11 +151,11 @@
           return;
         }
 
-        var ajaxUrl = cfg().ajaxUrl || ((window.EvaFW && window.EvaFW.adminUrl) ? window.EvaFW.adminUrl + 'admin-ajax.php' : '/wp-admin/admin-ajax.php');
+        var ajaxUrl = Cfg().ajaxUrl || ((window.EvaFW && window.EvaFW.adminUrl) ? window.EvaFW.adminUrl + 'admin-ajax.php' : '/wp-admin/admin-ajax.php');
         var params = new URLSearchParams();
         params.set('action', 'eva_fw_search_posts');
-        params.set('nonce', cfg().nonce || '');
-        params.set('post_type', postTypeParam(this.field.post_type || this.field.postType));
+        params.set('nonce', Cfg().nonce || '');
+        params.set('post_type', Post_Type_Param(this.field.post_type || this.field.postType));
         params.set('limit', this.field.limit || 20);
         if (includeId) {
           params.set('include', includeId);
@@ -165,6 +183,7 @@
             self.loading = false;
           });
       },
+      // Purpose: Handle pick behavior.
       pick: function (item) {
         if (this.isMultiple) {
           var values = this.values.slice();
@@ -184,19 +203,23 @@
         this.$emit('update:modelValue', item.value);
         this.close();
       },
+      // Purpose: Check is Selected state.
       isSelected: function (item) {
         return this.values.indexOf(String(item.value)) !== -1;
       },
+      // Purpose: Handle remove Value behavior.
       removeValue: function (value) {
         var stringValue = String(value);
         var values = this.values.filter(function (item) { return item !== stringValue; });
         this.selected = this.selected.filter(function (item) { return String(item.value) !== stringValue; });
         this.$emit('update:modelValue', values);
       },
+      // Purpose: Handle drag Start behavior.
       dragStart: function (index) {
         if (!this.canSort) { return; }
         this.dragIndex = index;
       },
+      // Purpose: Handle drop Value behavior.
       dropValue: function (index) {
         if (!this.canSort || this.dragIndex === null || this.dragIndex === index) {
           this.dragIndex = null;
@@ -212,6 +235,7 @@
         this.selected = selected;
         this.$emit('update:modelValue', values);
       },
+      // Purpose: Handle sort Items By Values behavior.
       sortItemsByValues: function (items, values) {
         return values.map(function (value) {
           return items.filter(function (item) { return String(item.value) === String(value); })[0] || null;
@@ -236,7 +260,7 @@
       '  <div v-show="open" class="eva-ajax-panel">',
       '    <div class="eva-ajax-search">',
       '      <i class="ri-search-line"></i>',
-      '      <input ref="search" type="text" v-model="query" :placeholder="tv(field.search_placeholder || field.searchPlaceholder || \'输入关键词搜索…\')" @input="onInput">',
+      '      <input ref="search" type="text" v-model="query" :placeholder="Tv(field.search_placeholder || field.searchPlaceholder || \'输入关键词搜索…\')" @input="onInput">',
       '    </div>',
       '    <div v-if="query.trim().length < minChars" class="eva-ajax-empty">至少输入 {{ minChars }} 个字符</div>',
       '    <div v-else-if="loading" class="eva-ajax-empty">搜索中…</div>',

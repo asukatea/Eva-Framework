@@ -2,6 +2,13 @@
 
 namespace Eva\Framework;
 
+/**
+ * WordPress 小工具实例桥接层。
+ *
+ * Widget 容器负责注册 WP_Widget，本文件负责单个 widget 实例的表单渲染、
+ * 保存清洗与前台输出，把 WordPress 原生 widget 生命周期接到 Eva 字段体系。
+ */
+
 // 阻断对该文件的直接 HTTP 访问，必须经由 WordPress 加载。
 if (! defined('ABSPATH')) {
     exit;

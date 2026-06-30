@@ -22,12 +22,14 @@
 (function () {
   window.EvaFields = window.EvaFields || {};
 
-  function toHex2(n) {
+  // Purpose: Convert a 0-255 number into a two-digit hex segment.
+  function To_Hex_2(n) {
     n = Math.max(0, Math.min(255, Math.round(n)));
     return ('0' + n.toString(16)).slice(-2).toUpperCase();
   }
 
-  function validColor(value) {
+  // Purpose: Validate and normalize a color value.
+  function Valid_Color(value) {
     var v = String(value == null ? '' : value).trim();
     if (/^#([0-9a-fA-F]{8})$/.test(v)) { return v.toUpperCase(); }
     if (/^#([0-9a-fA-F]{6})$/.test(v)) { return v.toUpperCase(); }
@@ -37,136 +39,174 @@
     return '#FF4D7F';
   }
 
-  function normItems(value) {
+  // Purpose: Normalize color group values into internal item objects.
+  function Norm_Items(value) {
     if (!Array.isArray(value)) { return []; }
     return value.map(function (it) {
       if (it && typeof it === 'object') {
-        return { color: validColor(it.color != null ? it.color : it.value), label: String(it.label || it.name || '') };
+        return { color: Valid_Color(it.color != null ? it.color : it.value), label: String(it.label || it.name || '') };
       }
-      return { color: validColor(it), label: '' };
+      return { color: Valid_Color(it), label: '' };
     });
   }
 
   window.EvaFields.color_group = {
     props: ['field', 'modelValue'],
     emits: ['update:modelValue'],
+    // Purpose: Initialize component state and exposed reactive data.
     data: function () {
       return { dragIndex: null, copiedIndex: null };
     },
     computed: {
-      items: function () { return normItems(this.modelValue); },
+      // Purpose: Handle items behavior.
+      items: function () { return Norm_Items(this.modelValue); },
+      // Purpose: Handle presets behavior.
       presets: function () {
         return Array.isArray(this.field.presets) && this.field.presets.length
           ? this.field.presets
           : ['#FF4D7F', '#FF6B6B', '#FFD166', '#06D6A0', '#4D96FF', '#9B5DE5'];
       },
+      // Purpose: Check has Presets state.
       hasPresets: function () {
         return this.field.show_presets !== false && this.field.showPresets !== false && this.presets.length > 0;
       },
+      // Purpose: Handle schemes behavior.
       schemes: function () { return Array.isArray(this.field.schemes) ? this.field.schemes : []; },
+      // Purpose: Handle max Colors behavior.
       maxColors: function () { return Math.max(0, Number(this.field.max_colors || this.field.maxColors || 0)); },
+      // Purpose: Handle min Colors behavior.
       minColors: function () { return Math.max(0, Number(this.field.min_colors || this.field.minColors || 0)); },
-      defaultColor: function () { return validColor(this.field.default_color || this.field.defaultColor || '#FF4D7F'); },
+      // Purpose: Handle default Color behavior.
+      defaultColor: function () { return Valid_Color(this.field.default_color || this.field.defaultColor || '#FF4D7F'); },
+      // Purpose: Check is Disabled state.
       isDisabled: function () { return this.field.disabled === true || this.field.disabled === 'true'; },
+      // Purpose: Handle alpha behavior.
       alpha: function () { return this.field.alpha === true || this.field.alpha === 'true'; },
+      // Purpose: Handle named behavior.
       named: function () { return this.field.named === true || this.field.named === 'true'; },
+      // Purpose: Handle show Hex behavior.
       showHex: function () { return this.field.show_hex === true || this.field.showHex === true; },
+      // Purpose: Handle copyable behavior.
       copyable: function () { return this.field.copyable === true || this.field.copyable === 'true'; },
+      // Purpose: Handle clearable behavior.
       clearable: function () { return this.field.clearable === true || this.field.clearable === 'true'; },
+      // Purpose: Handle resettable behavior.
       resettable: function () { return (this.field.resettable === true || this.field.resettable === 'true') && Array.isArray(this.field.default); },
+      // Purpose: Handle show Count behavior.
       showCount: function () { return this.field.show_count !== false && (this.maxColors > 0 || this.field.show_count === true); },
+      // Purpose: Check can Add state.
       canAdd: function () { return !this.isDisabled && (!this.maxColors || this.items.length < this.maxColors); },
+      // Purpose: Check can Remove state.
       canRemove: function () { return !this.isDisabled && this.items.length > this.minColors; }
     },
     methods: {
+      // Purpose: Handle tv behavior.
       tv: function (value) {
         return window.EvaI18n && window.EvaI18n.tv ? window.EvaI18n.tv(value) : (value || '');
       },
+      // Purpose: Handle title Text behavior.
       titleText: function () {
         return this.tv(this.field.group_title || this.field.groupTitle || this.field.title || '品牌色组');
       },
+      // Purpose: Handle desc Text behavior.
       descText: function () {
         return this.tv(this.field.group_desc || this.field.groupDesc || this.field.desc || '用于主题配色、图表颜色或模块强调色配置。');
       },
+      // Purpose: Handle base6 behavior.
       base6: function (color) {
-        var c = validColor(color);
+        var c = Valid_Color(color);
         return c.slice(0, 7);
       },
+      // Purpose: Handle alpha Of behavior.
       alphaOf: function (color) {
-        var c = validColor(color);
+        var c = Valid_Color(color);
         if (c.length === 9) { return Math.round(parseInt(c.slice(7, 9), 16) / 255 * 100); }
         return 100;
       },
+      // Purpose: Handle with Alpha behavior.
       withAlpha: function (color, percent) {
-        return this.base6(color) + toHex2(percent / 100 * 255);
+        return this.base6(color) + To_Hex_2(percent / 100 * 255);
       },
+      // Purpose: Handle emit behavior.
       emit: function (items) {
         var named = this.named;
         this.$emit('update:modelValue', items.map(function (i) {
           return named ? { color: i.color, label: i.label } : i.color;
         }));
       },
+      // Purpose: Handle clone Items behavior.
       cloneItems: function () {
         return this.items.map(function (i) { return { color: i.color, label: i.label }; });
       },
+      // Purpose: Handle add Color behavior.
       addColor: function () {
         if (!this.canAdd) { return; }
         var next = this.cloneItems();
         next.push({ color: this.alpha ? this.withAlpha(this.defaultColor, 100) : this.base6(this.defaultColor), label: '' });
         this.emit(next);
       },
+      // Purpose: Handle add Preset behavior.
       addPreset: function (preset) {
         if (!this.canAdd) { return; }
         var next = this.cloneItems();
-        next.push({ color: this.alpha ? (validColor(preset).length === 9 ? validColor(preset) : this.withAlpha(preset, 100)) : this.base6(preset), label: '' });
+        next.push({ color: this.alpha ? (Valid_Color(preset).length === 9 ? Valid_Color(preset) : this.withAlpha(preset, 100)) : this.base6(preset), label: '' });
         this.emit(next);
       },
+      // Purpose: Update update Color state.
       updateColor: function (index, value) {
         var next = this.cloneItems();
         if (!next[index]) { return; }
-        next[index].color = this.alpha ? this.withAlpha(value, this.alphaOf(next[index].color)) : validColor(value).slice(0, 7);
+        next[index].color = this.alpha ? this.withAlpha(value, this.alphaOf(next[index].color)) : Valid_Color(value).slice(0, 7);
         this.emit(next);
       },
+      // Purpose: Update update Hex state.
       updateHex: function (index, value) {
         var next = this.cloneItems();
         if (!next[index]) { return; }
-        var c = validColor(value);
+        var c = Valid_Color(value);
         next[index].color = this.alpha ? c : c.slice(0, 7);
         this.emit(next);
       },
+      // Purpose: Update update Alpha state.
       updateAlpha: function (index, percent) {
         var next = this.cloneItems();
         if (!next[index]) { return; }
         next[index].color = this.withAlpha(next[index].color, Number(percent));
         this.emit(next);
       },
+      // Purpose: Update update Label state.
       updateLabel: function (index, value) {
         var next = this.cloneItems();
         if (!next[index]) { return; }
         next[index].label = String(value);
         this.emit(next);
       },
+      // Purpose: Handle remove Color behavior.
       removeColor: function (index) {
         if (!this.canRemove) { return; }
         var next = this.cloneItems();
         next.splice(index, 1);
         this.emit(next);
       },
+      // Purpose: Handle clear All behavior.
       clearAll: function () {
         if (this.isDisabled) { return; }
         this.emit([]);
       },
+      // Purpose: Handle reset Default behavior.
       resetDefault: function () {
         if (this.isDisabled) { return; }
-        this.emit(normItems(this.field.default));
+        this.emit(Norm_Items(this.field.default));
       },
+      // Purpose: Handle apply Scheme behavior.
       applyScheme: function (scheme) {
         if (this.isDisabled || !scheme || !Array.isArray(scheme.colors)) { return; }
         var self = this;
-        var colors = scheme.colors.map(function (c) { return { color: self.alpha ? (validColor(c).length === 9 ? validColor(c) : self.withAlpha(c, 100)) : self.base6(c), label: '' }; });
+        var colors = scheme.colors.map(function (c) { return { color: self.alpha ? (Valid_Color(c).length === 9 ? Valid_Color(c) : self.withAlpha(c, 100)) : self.base6(c), label: '' }; });
         if (this.maxColors) { colors = colors.slice(0, this.maxColors); }
         this.emit(colors);
       },
+      // Purpose: Handle copy Color behavior.
       copyColor: function (index) {
         var item = this.items[index];
         if (!item) { return; }
@@ -178,10 +218,12 @@
           done();
         }
       },
+      // Purpose: Handle drag Start behavior.
       dragStart: function (index) {
         if (!this.field.sortable || this.isDisabled) { return; }
         this.dragIndex = index;
       },
+      // Purpose: Handle drop Color behavior.
       dropColor: function (index) {
         if (this.dragIndex === null || this.dragIndex === index) { this.dragIndex = null; return; }
         var next = this.cloneItems();

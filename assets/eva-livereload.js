@@ -28,7 +28,7 @@
   var interval = cfg.interval || 1500;
 
   // 读取单个资源的变更指纹。优先使用 Last-Modified，其次 ETag，最后 Content-Length 兜底。
-  function stamp(url) {
+  function Stamp(url) {
     var bust = url + (url.indexOf('?') > -1 ? '&' : '?') + '_t=' + Date.now();
     return fetch(bust, { method: 'HEAD', cache: 'no-store' })
       .then(function (r) {
@@ -43,8 +43,8 @@
   }
 
   // 每轮并发检查全部资源，只要有一个资源指纹变化就刷新当前页面。
-  function tick() {
-    Promise.all(cfg.assets.map(stamp)).then(function (vals) {
+  function Tick() {
+    Promise.all(cfg.assets.map(Stamp)).then(function (vals) {
       var changed = false;
       cfg.assets.forEach(function (u, i) {
         if (last[u] === undefined) {
@@ -59,6 +59,6 @@
     });
   }
 
-  // 简单定时轮询；无需立即 tick，避免页面刚加载时资源尚未稳定导致误刷新。
-  setInterval(tick, interval);
+  // 简单定时轮询；无需立即 Tick，避免页面刚加载时资源尚未稳定导致误刷新。
+  setInterval(Tick, interval);
 })();

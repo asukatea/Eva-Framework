@@ -23,21 +23,25 @@
 (function () {
   window.EvaFields = window.EvaFields || {};
 
-  function tv(value) {
+  // Purpose: Resolve multilingual values for the current language.
+  function Tv(value) {
     return window.EvaI18n && window.EvaI18n.tv ? window.EvaI18n.tv(value) : (value || '');
   }
 
-  function cssSize(value) {
+  // Purpose: Convert numeric or string size values into CSS values.
+  function Css_Size(value) {
     if (value == null || value === '') { return ''; }
     return /^\d+$/.test(String(value)) ? String(value) + 'px' : String(value);
   }
 
-  function cssRatio(value) {
+  // Purpose: Convert ratio config into CSS aspect-ratio syntax.
+  function Css_Ratio(value) {
     if (value == null || value === '') { return '16 / 9'; }
     return String(value).replace(':', ' / ');
   }
 
-  function normalizeOption(key, item, index) {
+  // Purpose: Normalize one image_select option for rendering.
+  function Normalize_Option(key, item, index) {
     var isObject = item && typeof item === 'object' && !Array.isArray(item);
     var value = isObject
       ? (item.value != null ? item.value : (item.id != null ? item.id : key))
@@ -59,12 +63,13 @@
     };
   }
 
-  function normalizeList(raw) {
+  // Purpose: Normalize option input into a consistent list.
+  function Normalize_List(raw) {
     if (Array.isArray(raw)) {
-      return raw.map(function (item, index) { return normalizeOption(index, item, index); });
+      return raw.map(function (item, index) { return Normalize_Option(index, item, index); });
     }
     if (raw && typeof raw === 'object') {
-      return Object.keys(raw).map(function (key, index) { return normalizeOption(key, raw[key], index); });
+      return Object.keys(raw).map(function (key, index) { return Normalize_Option(key, raw[key], index); });
     }
     return [];
   }
@@ -72,32 +77,47 @@
   window.EvaFields.image_select = {
     props: ['field', 'modelValue'],
     emits: ['update:modelValue'],
+    // Purpose: Initialize component state and exposed reactive data.
     data: function () {
       return { zoomOption: null, query: '', loaded: {}, rootWidth: 0, extraOptions: [], ro: null };
     },
     computed: {
+      // Purpose: Check is Multiple state.
       isMultiple: function () { return this.field.multiple === true || this.field.multiple === 'true'; },
+      // Purpose: Handle max Count behavior.
       maxCount: function () {
         var m = parseInt(this.field.max || this.field.max_select || this.field.maxSelect || 0, 10);
         return m > 0 ? m : 0;
       },
+      // Purpose: Handle clearable behavior.
       clearable: function () { return this.field.clearable === true || this.field.clearable === 'true'; },
+      // Purpose: Handle searchable behavior.
       searchable: function () { return this.field.searchable === true || this.field.search === true; },
+      // Purpose: Handle lazy behavior.
       lazy: function () { return this.field.lazy === true || this.field.lazy_load === true || this.field.lazyLoad === true; },
+      // Purpose: Handle media Enabled behavior.
       mediaEnabled: function () { return this.field.media === true || this.field.allow_upload === true || this.field.allowUpload === true; },
+      // Purpose: Handle show Label behavior.
       showLabel: function () { return this.field.show_label !== false && this.field.showLabel !== false; },
+      // Purpose: Handle show Desc behavior.
       showDesc: function () { return this.field.show_desc !== false && this.field.showDesc !== false; },
+      // Purpose: Handle zoom Enabled behavior.
       zoomEnabled: function () { return this.field.zoom !== false && this.field.lightbox !== false; },
-      baseOptions: function () { return normalizeList(this.field.options || []); },
+      // Purpose: Handle base Options behavior.
+      baseOptions: function () { return Normalize_List(this.field.options || []); },
+      // Purpose: Handle options behavior.
       options: function () { return this.baseOptions.concat(this.extraOptions); },
+      // Purpose: Handle filtered Options behavior.
       filteredOptions: function () {
         var q = (this.query || '').trim().toLowerCase();
         if (!q) { return this.options; }
         return this.options.filter(function (o) {
-          return (tv(o.label) + ' ' + tv(o.desc) + ' ' + o.value).toLowerCase().indexOf(q) !== -1;
+          return (Tv(o.label) + ' ' + Tv(o.desc) + ' ' + o.value).toLowerCase().indexOf(q) !== -1;
         });
       },
+      // Purpose: Check has Groups state.
       hasGroups: function () { return this.options.some(function (o) { return !!o.group; }); },
+      // Purpose: Handle grouped Options behavior.
       groupedOptions: function () {
         var groups = [];
         var map = {};
@@ -108,14 +128,18 @@
         });
         return groups;
       },
+      // Purpose: Handle selected Values behavior.
       selectedValues: function () {
         var v = this.modelValue;
         if (Array.isArray(v)) { return v.map(function (x) { return String(x); }); }
         if (v == null || v === '') { return []; }
         return [String(v)];
       },
+      // Purpose: Handle selected Count behavior.
       selectedCount: function () { return this.selectedValues.length; },
+      // Purpose: Check has Selection state.
       hasSelection: function () { return this.selectedCount > 0; },
+      // Purpose: Handle resolved Columns behavior.
       resolvedColumns: function () {
         var sm = parseInt(this.field.columns_sm || this.field.columnsSm || 0, 10);
         var md = parseInt(this.field.columns_md || this.field.columnsMd || 0, 10);
@@ -128,14 +152,15 @@
         }
         return parseInt(this.field.columns || this.field.cols || 0, 10);
       },
+      // Purpose: Handle grid Style behavior.
       gridStyle: function () {
         var columns = this.resolvedColumns;
         var explicitMinWidth = this.field.min_width || this.field.minWidth;
         var sizeKey = String(this.field.size || this.field.card_size || this.field.cardSize || '').toLowerCase();
         var sizePresets = { small: '96px', medium: '128px', large: '176px' };
-        var previewHeight = cssSize(this.field.preview_height || this.field.previewHeight || this.field.image_height || this.field.imageHeight);
+        var previewHeight = Css_Size(this.field.preview_height || this.field.previewHeight || this.field.image_height || this.field.imageHeight);
         var style = {
-          '--eva-is-ratio': cssRatio(this.field.aspect_ratio || this.field.aspectRatio || this.field.ratio),
+          '--eva-is-ratio': Css_Ratio(this.field.aspect_ratio || this.field.aspectRatio || this.field.ratio),
           '--eva-is-fit': this.field.object_fit || this.field.objectFit || this.field.fit || 'cover'
         };
         if (previewHeight) {
@@ -151,16 +176,21 @@
           style.justifyContent = 'start';
           return style;
         }
-        style.gridTemplateColumns = 'repeat(auto-fit, minmax(' + cssSize(explicitMinWidth || '138px') + ', 1fr))';
+        style.gridTemplateColumns = 'repeat(auto-fit, minmax(' + Css_Size(explicitMinWidth || '138px') + ', 1fr))';
         return style;
       },
+      // Purpose: Handle show Toolbar behavior.
       showToolbar: function () { return this.searchable || this.clearable || this.mediaEnabled || this.isMultiple; }
     },
     methods: {
-      tv: tv,
+      Tv: Tv,
+      // Purpose: Check is Selected state.
       isSelected: function (option) { return this.selectedValues.indexOf(option.value) !== -1; },
+      // Purpose: Handle at Max behavior.
       atMax: function () { return this.isMultiple && this.maxCount > 0 && this.selectedCount >= this.maxCount; },
+      // Purpose: Handle emit Value behavior.
       emitValue: function (val) { this.$emit('update:modelValue', val); },
+      // Purpose: Handle select Value behavior.
       selectValue: function (value, forceOn) {
         value = String(value);
         if (this.isMultiple) {
@@ -181,18 +211,25 @@
           }
         }
       },
+      // Purpose: Handle choose behavior.
       choose: function (option) {
         if (this.field.disabled || option.disabled) { return; }
         this.selectValue(option.value, false);
       },
+      // Purpose: Handle clear All behavior.
       clearAll: function () {
         if (this.field.disabled) { return; }
         this.emitValue(this.isMultiple ? [] : '');
       },
+      // Purpose: Handle on Img Load behavior.
       onImgLoad: function (option) { this.loaded[option.value] = true; },
+      // Purpose: Check is Loaded state.
       isLoaded: function (option) { return !this.lazy || this.loaded[option.value] === true; },
+      // Purpose: Open open Zoom UI or state.
       openZoom: function (option) { if (option.url) { this.zoomOption = option; } },
+      // Purpose: Close close Zoom UI or state.
       closeZoom: function () { this.zoomOption = null; },
+      // Purpose: Handle on Card Key behavior.
       onCardKey: function (e, option) {
         var k = e.key;
         if (k === 'Enter' || k === ' ' || k === 'Spacebar') {
@@ -204,6 +241,7 @@
           this.onNavKey(e);
         }
       },
+      // Purpose: Handle on Nav Key behavior.
       onNavKey: function (e) {
         if (!this.$el || !this.$el.querySelectorAll) { return; }
         var cards = Array.prototype.slice.call(this.$el.querySelectorAll('.eva-is-card')).filter(function (c) {
@@ -223,6 +261,7 @@
         e.preventDefault();
         if (cards[next] && cards[next].focus) { cards[next].focus(); }
       },
+      // Purpose: Handle pick From Media behavior.
       pickFromMedia: function () {
         var self = this;
         if (!(window.wp && window.wp.media)) {
@@ -230,7 +269,7 @@
           return;
         }
         var frame = window.wp.media({
-          title: tv(self.field.media_title) || '选择图片',
+          title: Tv(self.field.media_title) || '选择图片',
           library: { type: 'image' },
           multiple: self.isMultiple
         });
@@ -257,6 +296,7 @@
         });
         frame.open();
       },
+      // Purpose: Handle measure behavior.
       measure: function () {
         if (this.$el && this.$el.getBoundingClientRect) {
           var w = this.$el.getBoundingClientRect().width;
@@ -264,6 +304,7 @@
         }
       }
     },
+    // Purpose: Run component mount initialization.
     mounted: function () {
       var self = this;
       this.measure();
@@ -275,6 +316,7 @@
         window.addEventListener('resize', this._onResize);
       }
     },
+    // Purpose: Clean up listeners, timers, or temporary state before unmount.
     beforeUnmount: function () {
       if (this.ro) { this.ro.disconnect(); this.ro = null; }
       if (this._onResize) { window.removeEventListener('resize', this._onResize); this._onResize = null; }
@@ -284,40 +326,40 @@
       '  <div v-if="showToolbar" class="eva-is-toolbar">',
       '    <div v-if="searchable" class="eva-is-search">',
       '      <i class="ri-search-line" aria-hidden="true"></i>',
-      '      <input type="text" v-model="query" :placeholder="tv(field.search_placeholder) || \'搜索选项…\'" :disabled="field.disabled" :aria-label="\'搜索选项\'">',
+      '      <input type="text" v-model="query" :placeholder="Tv(field.search_placeholder) || \'搜索选项…\'" :disabled="field.disabled" :aria-label="\'搜索选项\'">',
       '      <button v-if="query" type="button" class="eva-is-search-clear" aria-label="清除搜索" @click="query = \'\'"><i class="ri-close-line"></i></button>',
       '    </div>',
       '    <div class="eva-is-tools">',
       '      <span v-if="isMultiple" class="eva-is-count">已选 {{ selectedCount }}<template v-if="maxCount"> / {{ maxCount }}</template></span>',
-      '      <button v-if="mediaEnabled" type="button" class="eva-is-tool-btn" :disabled="field.disabled" @click="pickFromMedia"><i class="ri-image-add-line"></i><span>{{ tv(field.media_button) || \'媒体库\' }}</span></button>',
+      '      <button v-if="mediaEnabled" type="button" class="eva-is-tool-btn" :disabled="field.disabled" @click="pickFromMedia"><i class="ri-image-add-line"></i><span>{{ Tv(field.media_button) || \'媒体库\' }}</span></button>',
       '      <button v-if="clearable" type="button" class="eva-is-tool-btn" :disabled="field.disabled || !hasSelection" @click="clearAll"><i class="ri-eraser-line"></i><span>清除</span></button>',
       '    </div>',
       '  </div>',
       '  <template v-for="grp in groupedOptions" :key="\'g-\' + grp.label">',
       '    <div class="eva-is-group">',
-      '      <div v-if="grp.label" class="eva-is-group-title">{{ tv(grp.label) }}</div>',
-      '      <div class="eva-image-select" :class="{ \'is-disabled\': field.disabled }" :style="gridStyle" :role="isMultiple ? \'group\' : \'radiogroup\'" :aria-label="tv(field.title) || \'Image Select\'">',
+      '      <div v-if="grp.label" class="eva-is-group-title">{{ Tv(grp.label) }}</div>',
+      '      <div class="eva-image-select" :class="{ \'is-disabled\': field.disabled }" :style="gridStyle" :role="isMultiple ? \'group\' : \'radiogroup\'" :aria-label="Tv(field.title) || \'Image Select\'">',
       '        <div v-for="option in grp.options" :key="option.value" class="eva-is-card" :class="{ \'is-selected\': isSelected(option), \'is-disabled\': field.disabled || option.disabled, \'is-multiple\': isMultiple, \'is-dimmed\': atMax() && !isSelected(option) }" :role="isMultiple ? \'checkbox\' : \'radio\'" :aria-checked="isSelected(option) ? \'true\' : \'false\'" :aria-disabled="field.disabled || option.disabled ? \'true\' : \'false\'" :tabindex="field.disabled || option.disabled ? -1 : 0" @click="choose(option)" @keydown="onCardKey($event, option)">',
       '          <span class="eva-is-preview">',
       '            <span v-if="lazy && !isLoaded(option) && option.url" class="eva-is-skeleton" aria-hidden="true"></span>',
-      '            <img v-if="option.url" :src="option.url" :alt="tv(option.label)" :loading="lazy ? \'lazy\' : \'eager\'" :class="{ \'is-loading\': lazy && !isLoaded(option) }" @load="onImgLoad(option)">',
+      '            <img v-if="option.url" :src="option.url" :alt="Tv(option.label)" :loading="lazy ? \'lazy\' : \'eager\'" :class="{ \'is-loading\': lazy && !isLoaded(option) }" @load="onImgLoad(option)">',
       '            <span v-else class="eva-is-placeholder"><i class="ri-image-line"></i></span>',
-      '            <button v-if="option.url && zoomEnabled && !field.disabled && !option.disabled" type="button" class="eva-is-zoom" :aria-label="\'放大 \' + tv(option.label)" @click.stop="openZoom(option)" @keydown.enter.stop.prevent="openZoom(option)" @keydown.space.stop.prevent="openZoom(option)"><i class="ri-zoom-in-line"></i></button>',
-      '            <span v-if="option.badge" class="eva-is-badge" :class="option.badgeTone ? \'is-\' + option.badgeTone : \'\'">{{ tv(option.badge) }}</span>',
+      '            <button v-if="option.url && zoomEnabled && !field.disabled && !option.disabled" type="button" class="eva-is-zoom" :aria-label="\'放大 \' + Tv(option.label)" @click.stop="openZoom(option)" @keydown.enter.stop.prevent="openZoom(option)" @keydown.space.stop.prevent="openZoom(option)"><i class="ri-zoom-in-line"></i></button>',
+      '            <span v-if="option.badge" class="eva-is-badge" :class="option.badgeTone ? \'is-\' + option.badgeTone : \'\'">{{ Tv(option.badge) }}</span>',
       '            <i v-if="isSelected(option)" class="eva-is-check ri-check-line" aria-hidden="true"></i>',
       '          </span>',
-      '          <strong v-if="showLabel">{{ tv(option.label) }}</strong>',
-      '          <em v-if="showDesc && tv(option.desc)">{{ tv(option.desc) }}</em>',
+      '          <strong v-if="showLabel">{{ Tv(option.label) }}</strong>',
+      '          <em v-if="showDesc && Tv(option.desc)">{{ Tv(option.desc) }}</em>',
       '        </div>',
       '      </div>',
       '    </div>',
       '  </template>',
-      '  <p v-if="!filteredOptions.length" class="eva-is-empty">{{ query ? (tv(field.no_result_message || field.noResultMessage) || \'没有匹配的选项\') : (tv(field.empty_message || field.emptyMessage) || \'暂无可选图片\') }}</p>',
+      '  <p v-if="!filteredOptions.length" class="eva-is-empty">{{ query ? (Tv(field.no_result_message || field.noResultMessage) || \'没有匹配的选项\') : (Tv(field.empty_message || field.emptyMessage) || \'暂无可选图片\') }}</p>',
       '  <div v-if="zoomOption" class="eva-is-lightbox" role="dialog" aria-modal="true" @click.self="closeZoom">',
       '    <div class="eva-is-lightbox-card">',
       '      <button type="button" class="eva-is-lightbox-close" aria-label="关闭预览" @click="closeZoom"><i class="ri-close-line"></i></button>',
-      '      <img :src="zoomOption.url" :alt="tv(zoomOption.label)">',
-      '      <strong>{{ tv(zoomOption.label) }}</strong>',
+      '      <img :src="zoomOption.url" :alt="Tv(zoomOption.label)">',
+      '      <strong>{{ Tv(zoomOption.label) }}</strong>',
       '    </div>',
       '  </div>',
       '</div>'

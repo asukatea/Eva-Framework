@@ -19,6 +19,7 @@
     props: ['field', 'modelValue'],
     emits: ['update:modelValue'],
     computed: {
+      // Purpose: Handle ajax Component behavior.
       ajaxComponent: function () {
         return window.EvaFields && window.EvaFields.ajax_select ? window.EvaFields.ajax_select : null;
       }

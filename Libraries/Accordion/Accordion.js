@@ -8,7 +8,8 @@
   window.EvaUI = window.EvaUI || {};
 
   var gsapPromise = null;
-  function loadGsap() {
+  // Purpose: Load GSAP on demand and fall back when unavailable.
+  function Load_Gsap() {
     if (window.gsap) { return Promise.resolve(window.gsap); }
     if (gsapPromise) { return gsapPromise; }
     gsapPromise = new Promise(function (resolve, reject) {
@@ -32,27 +33,31 @@
       disabled: { type: Boolean, default: false }
     },
     emits: ['change'],
+    // Purpose: Initialize component state and exposed reactive data.
     data: function () {
       return {
         openKeys: this.initialOpenKeys(),
         gsapReady: !!window.gsap
       };
     },
+    // Purpose: Run component mount initialization.
     mounted: function () {
       var self = this;
-      loadGsap().then(function () {
+      Load_Gsap().then(function () {
         self.gsapReady = true;
       }).catch(function () {
         self.gsapReady = false;
       });
     },
     watch: {
+      // Purpose: Handle panels behavior.
       panels: function () {
         var valid = this.panels.map(this.panelKey);
         this.openKeys = this.openKeys.filter(function (key) { return valid.indexOf(key) !== -1; });
       }
     },
     methods: {
+      // Purpose: Handle initial Open Keys behavior.
       initialOpenKeys: function () {
         var keys = Array.isArray(this.defaultOpen) ? this.defaultOpen : (this.defaultOpen !== '' ? [this.defaultOpen] : []);
         if (!keys.length && this.panels.length) {
@@ -60,18 +65,22 @@
         }
         return keys.map(String);
       },
+      // Purpose: Handle panel Key behavior.
       panelKey: function (panel, index) {
         return String(panel && (panel.id || panel.key) ? (panel.id || panel.key) : index);
       },
+      // Purpose: Check is Open state.
       isOpen: function (panel, index) {
         return this.openKeys.indexOf(this.panelKey(panel, index)) !== -1;
       },
+      // Purpose: Handle panel Toggle Icon behavior.
       panelToggleIcon: function (panel, index) {
         if (this.isOpen(panel, index)) {
           return panel.open_icon || panel.openIcon || this.openIcon;
         }
         return panel.closed_icon || panel.closedIcon || panel.icon_closed || panel.iconClosed || this.closedIcon;
       },
+      // Purpose: Toggle toggle state.
       toggle: function (panel, index) {
         if (this.disabled || (panel && panel.disabled)) { return; }
         var key = this.panelKey(panel, index);
@@ -86,10 +95,12 @@
         this.openKeys = next;
         this.$emit('change', next);
       },
+      // Purpose: Handle reset Tween behavior.
       resetTween: function (el) {
         if (window.gsap) { window.gsap.killTweensOf(el); }
         el.style.overflow = 'hidden';
       },
+      // Purpose: Handle before Enter Body behavior.
       beforeEnterBody: function (el) {
         this.resetTween(el);
         var inner = el.querySelector('.eva-acc-inner');
@@ -101,11 +112,13 @@
           inner.style.transform = 'translateY(-6px)';
         }
       },
+      // Purpose: Handle enter Body behavior.
       enterBody: function (el, done) {
         var inner = el.querySelector('.eva-acc-inner');
         if (window.gsap) {
           var tl = window.gsap.timeline({
             defaults: { ease: 'expo.out' },
+            // Purpose: Run animation completion cleanup.
             onComplete: function () {
               done();
             }
@@ -138,6 +151,7 @@
         }
         this.nativeTween(el, { height: el.scrollHeight + 'px', opacity: '1', transform: 'translateY(0)' }, done, 360);
       },
+      // Purpose: Handle leave Body behavior.
       leaveBody: function (el, done) {
         this.resetTween(el);
         var inner = el.querySelector('.eva-acc-inner');
@@ -147,6 +161,7 @@
         if (window.gsap) {
           var tl = window.gsap.timeline({
             defaults: { ease: 'sine.inOut' },
+            // Purpose: Run animation completion cleanup.
             onComplete: function () {
               done();
             }
@@ -173,6 +188,7 @@
         }
         this.nativeTween(el, { height: '0px', opacity: '0.98', transform: 'translateY(0)' }, done, 340);
       },
+      // Purpose: Handle after Body behavior.
       afterBody: function (el) {
         var inner = el.querySelector('.eva-acc-inner');
         el.style.height = '';
@@ -185,6 +201,7 @@
           inner.style.visibility = '';
         }
       },
+      // Purpose: Handle native Tween behavior.
       nativeTween: function (el, styles, done, duration) {
         duration = duration || 320;
         window.requestAnimationFrame(function () {

@@ -29,6 +29,7 @@
   var cfg = boot.config || {};
 
   var App = {
+    // Purpose: Initialize component state and exposed reactive data.
     setup: function () {
       /*
        * 基础 UI 状态：
@@ -93,18 +94,20 @@
         return hit || evaLangs[0];
       });
       // 点击循环切换到下一种语言。
-      function cycleLang() {
+      function Cycle_Lang() {
         var i = evaLangs.findIndex(function (l) { return l.code === evaI18nState.lang; });
         evaI18nState.lang = evaLangs[(i + 1) % evaLangs.length].code;
       }
       // 顶部语言下拉的展开状态与选择。
       var langOpen = Vue.ref(false);
-      function chooseLang(code) { evaI18nState.lang = code; langOpen.value = false; }
+      // Purpose: Select an editing language and close the menu.
+      function Choose_Lang(code) { evaI18nState.lang = code; langOpen.value = false; }
 
       // 界面文案翻译：统一挂到全局 window.EvaI18n，eva-app 自身与所有字段/库组件复用同一套。
       // t(key) 取框架词条；tv(v) 翻译「值」（多语言对象按当前语言取，普通字符串原样）。
       // 两者内部都读 window.EvaI18nState.lang（reactive）+ EvaFW.config.messages，故模板调用即随切换重渲染。
       window.EvaI18n = window.EvaI18n || {
+        // Purpose: Handle t behavior.
         t: function (key) {
           var m = (window.EvaFW && window.EvaFW.config && window.EvaFW.config.messages) || {};
           var lang = (window.EvaI18nState && window.EvaI18nState.lang) || 'zh';
@@ -113,6 +116,7 @@
           if (m.zh && m.zh[key] != null) { return m.zh[key]; }
           return key;
         },
+        // Purpose: Handle tv behavior.
         tv: function (v) {
           var lang = (window.EvaI18nState && window.EvaI18nState.lang) || 'zh';
           if (v && typeof v === 'object' && !Array.isArray(v)) {
@@ -144,49 +148,54 @@
         });
         return out;
       });
-      function openSearch() {
+      // Purpose: Open the command search panel and focus the input.
+      function Open_Search() {
         searchOpen.value = true;
         searchQuery.value = '';
         Vue.nextTick(function () {
           if (searchInput.value && searchInput.value.focus) { searchInput.value.focus(); }
         });
       }
-      function closeSearch() {
+      // Purpose: Close the command search panel.
+      function Close_Search() {
         searchOpen.value = false;
       }
-      function gotoResult(r) {
-        openMenu(r.sectionId);
+      // Purpose: Navigate to the section that contains a search result.
+      function Goto_Result(r) {
+        Open_Menu(r.sectionId);
         if (active.value !== r.sectionId) {
           active.value = r.sectionId;
           activeTab.value = r.sectionId;
         }
-        closeSearch();
+        Close_Search();
       }
-      function onSearchEnter() {
+      // Purpose: Open the first search result on Enter.
+      function On_Search_Enter() {
         var list = searchResults.value;
-        if (list.length) { gotoResult(list[0]); }
+        if (list.length) { Goto_Result(list[0]); }
       }
-      function onGlobalKey(e) {
+      // Purpose: Handle global Ctrl/Cmd+K and Escape shortcuts.
+      function On_Global_Key(e) {
         if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) {
           e.preventDefault();
-          if (searchOpen.value) { closeSearch(); } else { openSearch(); }
+          if (searchOpen.value) { Close_Search(); } else { Open_Search(); }
         } else if (e.key === 'Escape' && searchOpen.value) {
-          closeSearch();
+          Close_Search();
         }
       }
-      Vue.onMounted(function () { document.addEventListener('keydown', onGlobalKey); });
-      Vue.onBeforeUnmount(function () { document.removeEventListener('keydown', onGlobalKey); });
+      Vue.onMounted(function () { document.addEventListener('keydown', On_Global_Key); });
+      Vue.onBeforeUnmount(function () { document.removeEventListener('keydown', On_Global_Key); });
       // 语言下拉：点击下拉外部时关闭（捕获阶段 mousedown，先于 click 触发）。
-      function onLangDocDown(e) {
+      function On_Lang_Doc_Down(e) {
         if (langOpen.value && e.target && e.target.closest && !e.target.closest('.eva-lang-wrap')) {
           langOpen.value = false;
         }
       }
-      Vue.onMounted(function () { document.addEventListener('mousedown', onLangDocDown, true); });
-      Vue.onBeforeUnmount(function () { document.removeEventListener('mousedown', onLangDocDown, true); });
+      Vue.onMounted(function () { document.addEventListener('mousedown', On_Lang_Doc_Down, true); });
+      Vue.onBeforeUnmount(function () { document.removeEventListener('mousedown', On_Lang_Doc_Down, true); });
 
       // 在一二级菜单树中按 id 查找菜单项，用于打开页面、标题展示和页签生成。
-      function findMenuItem(id) {
+      function Find_Menu_Item(id) {
         for (var i = 0; i < menu.length; i++) {
           if (menu[i].id === id) return menu[i];
           var ch = menu[i].children || [];
@@ -197,22 +206,24 @@
         return null;
       }
 
-      function hasChildren(m) {
+      // Purpose: Check whether a menu item has children.
+      function Has_Children(m) {
         return !!(m.children && m.children.length);
       }
-      function isOpen(id) {
+      // Purpose: Read the expanded state for a menu item.
+      function Is_Open(id) {
         return !!openMenus[id];
       }
 
       var currentTitle = Vue.computed(function () {
         if (active.value === 'eva-guide') return t('guide_menu');
-        var m = findMenuItem(active.value);
+        var m = Find_Menu_Item(active.value);
         return m ? tv(m.label) : '';
       });
 
       // 打开菜单对应内容页；首次打开时同步创建一个可关闭页签。
-      function openMenu(id) {
-        var m = findMenuItem(id);
+      function Open_Menu(id) {
+        var m = Find_Menu_Item(id);
         if (!m) return;
         active.value = id;
         activeTab.value = id;
@@ -222,20 +233,22 @@
       }
 
       // 点一级项：有子菜单则展开/收起，否则直接打开
-      function onMenuClick(m) {
-        if (hasChildren(m)) {
+      function On_Menu_Click(m) {
+        if (Has_Children(m)) {
           openMenus[m.id] = !openMenus[m.id];
         } else {
-          openMenu(m.id);
+          Open_Menu(m.id);
         }
       }
 
-      function selectTab(id) {
+      // Purpose: Activate an existing tab.
+      function Select_Tab(id) {
         activeTab.value = id;
         active.value = id;
       }
 
-      function closeTab(id) {
+      // Purpose: Close a tab and select a fallback tab.
+      function Close_Tab(id) {
         var i = tabs.findIndex(function (t) { return t.id === id; });
         if (i === -1 || !tabs[i].closable) return;
         tabs.splice(i, 1);
@@ -247,7 +260,7 @@
       }
 
       // 关闭其他：保留固定页签（不可关）与当前页签，其余关闭
-      function closeOtherTabs() {
+      function Close_Other_Tabs() {
         var keep = tabs.filter(function (t) {
           return !t.closable || t.id === activeTab.value;
         });
@@ -256,7 +269,7 @@
       }
 
       // 刷新当前页（等价 router.go(0)）
-      function refresh() {
+      function Refresh() {
         window.location.reload();
       }
 
@@ -264,25 +277,31 @@
         return tabs.filter(function (t) { return t.closable; }).length;
       });
 
-      function toggleDark() {
+      // Purpose: Toggle dark mode.
+      function Toggle_Dark() {
         dark.value = !dark.value;
       }
-      function toggleSidebar() {
+      // Purpose: Collapse or expand the sidebar.
+      function Toggle_Sidebar() {
         sidebarCollapsed.value = !sidebarCollapsed.value;
       }
-      function toggleUser() {
+      // Purpose: Open or close the user menu.
+      function Toggle_User() {
         userOpen.value = !userOpen.value;
       }
-      function closeUser() {
+      // Purpose: Close the user menu.
+      function Close_User() {
         userOpen.value = false;
       }
 
       // 设置抽屉
       var settingsOpen = Vue.ref(false);
-      function toggleSettings() {
+      // Purpose: Open or close the settings drawer.
+      function Toggle_Settings() {
         settingsOpen.value = !settingsOpen.value;
       }
-      function closeSettings() {
+      // Purpose: Close the settings drawer.
+      function Close_Settings() {
         settingsOpen.value = false;
       }
 
@@ -298,7 +317,8 @@
         { key: 'indigo', label: '靛紫', color: '#6366f1', c600: '#4f46e5', c050: '#eef0fe' },
       ];
       var accent = Vue.ref('coral');
-      function setAccent(a) {
+      // Purpose: Switch the admin accent color.
+      function Set_Accent(a) {
         accent.value = a.key;
       }
       var rootStyle = Vue.computed(function () {
@@ -315,7 +335,8 @@
       var isAdmin = !!cfg.isAdmin;
       var guideVisible = Vue.ref(cfg.guideVisible !== false);
 
-      function openGuide() {
+      // Purpose: Open the built-in Eva guide tab.
+      function Open_Guide() {
         active.value = 'eva-guide';
         activeTab.value = 'eva-guide';
         if (!tabs.find(function (t) { return t.id === 'eva-guide'; })) {
@@ -323,7 +344,8 @@
         }
       }
 
-      function toggleGuide() {
+      // Purpose: Persist the global guide menu visibility setting.
+      function Toggle_Guide() {
         if (!isAdmin) return;
         var next = !guideVisible.value;
         guideVisible.value = next; // 乐观更新
@@ -343,7 +365,8 @@
 
       // 后台悬浮窗开关（仅管理员，全站生效）
       var floatingEnabled = Vue.ref(cfg.floatingEnabled !== false);
-      function toggleFloating() {
+      // Purpose: Persist the global floating admin panel setting.
+      function Toggle_Floating() {
         if (!isAdmin) return;
         var next = !floatingEnabled.value;
         floatingEnabled.value = next; // 乐观更新
@@ -361,7 +384,8 @@
         }).catch(function () { floatingEnabled.value = !next; });
       }
 
-      function guideEnvironment() {
+      // Purpose: Prepare environment rows for the guide page.
+      function Guide_Environment() {
         var items = Array.isArray(cfg.guideEnvironment) ? cfg.guideEnvironment : [];
         if (!items.length) {
           items = [
@@ -452,11 +476,11 @@
             ].join('\n'),
           },
         ],
-        requirements: guideEnvironment(),
+        requirements: Guide_Environment(),
         resources: [
           { icon: 'ri-book-open-line', title: '官方文档', desc: '查看使用方式与 API 约定' },
           { icon: 'ri-github-line', title: '字段组件', desc: '按 Fields 拆分维护' },
-          { icon: 'ri-refresh-line', title: '更新日志', desc: '跟踪框架迭代记录' },
+          { icon: 'ri-Refresh-line', title: '更新日志', desc: '跟踪框架迭代记录' },
         ],
       };
       guide.groups = [
@@ -638,7 +662,8 @@
         },
       ];
 
-      function copyGuideCode(code) {
+      // Purpose: Copy guide code examples and show copied state.
+      function Copy_Guide_Code(code) {
         if (!code || !navigator.clipboard) { return; }
         navigator.clipboard.writeText(code);
       }
@@ -664,7 +689,8 @@
       var currentGuideSections = Vue.computed(function () {
         return (currentGuideGroup.value && currentGuideGroup.value.sections) || [];
       });
-      function discardChanges() {
+      // Purpose: Restore the form model from the saved snapshot.
+      function Discard_Changes() {
         var orig = {};
         try { orig = JSON.parse(savedSnapshot.value); } catch (e) {}
         Object.keys(model).forEach(function (k) { delete model[k]; });
@@ -687,21 +713,24 @@
         return s.fields.some(function (f) { return f.type === 'backup' || f.type === 'html'; });
       });
 
-      function fieldDefault(f) { return (f.default !== undefined ? f.default : ''); }
-      function resetSection() {
+      // Purpose: Return a field default value or an empty string.
+      function Field_Default(f) { return (f.default !== undefined ? f.default : ''); }
+      // Purpose: Reset fields in the current section to defaults.
+      function Reset_Section() {
         var s = currentSection.value;
-        if (s && s.fields) { s.fields.forEach(function (f) { model[f.id] = fieldDefault(f); }); }
+        if (s && s.fields) { s.fields.forEach(function (f) { model[f.id] = Field_Default(f); }); }
         resetOpen.value = false;
       }
-      function resetAll() {
+      // Purpose: Reset all registered fields to defaults.
+      function Reset_All() {
         sections.forEach(function (s) {
-          (s.fields || []).forEach(function (f) { model[f.id] = fieldDefault(f); });
+          (s.fields || []).forEach(function (f) { model[f.id] = Field_Default(f); });
         });
         resetOpen.value = false;
       }
 
       // 字段宽度 → 12 栅格列跨度 class（默认整行；字段配置里写 width 即可多列并排）
-      function fieldCol(f) {
+      function Field_Col(f) {
         var map = {
           'full': 'eva-col-12', '1': 'eva-col-12', '1/1': 'eva-col-12',
           '3/4': 'eva-col-9', '2/3': 'eva-col-8',
@@ -715,7 +744,7 @@
       var saving = Vue.ref(false);
       var saveMsg = Vue.ref('');
       // 保存设置页字段：通过 admin-ajax 调用 Data::ajax_save，后端按 schema 清洗未知字段。
-      function saveOptions() {
+      function Save_Options() {
         if (saving.value) { return; }
         saving.value = true;
         saveMsg.value = '保存中…';
@@ -760,64 +789,64 @@
         evaLangs: evaLangs,
         evaI18nState: evaI18nState,
         curLang: curLang,
-        cycleLang: cycleLang,
+        Cycle_Lang: Cycle_Lang,
         langOpen: langOpen,
-        chooseLang: chooseLang,
+        Choose_Lang: Choose_Lang,
         t: t,
         tv: tv,
-        openSearch: openSearch,
-        closeSearch: closeSearch,
-        gotoResult: gotoResult,
-        onSearchEnter: onSearchEnter,
+        Open_Search: Open_Search,
+        Close_Search: Close_Search,
+        Goto_Result: Goto_Result,
+        On_Search_Enter: On_Search_Enter,
         user: user,
         active: active,
         tabs: tabs,
         activeTab: activeTab,
         currentTitle: currentTitle,
-        openMenu: openMenu,
-        onMenuClick: onMenuClick,
-        isOpen: isOpen,
-        hasChildren: hasChildren,
-        selectTab: selectTab,
-        closeTab: closeTab,
-        closeOtherTabs: closeOtherTabs,
-        refresh: refresh,
+        Open_Menu: Open_Menu,
+        On_Menu_Click: On_Menu_Click,
+        Is_Open: Is_Open,
+        Has_Children: Has_Children,
+        Select_Tab: Select_Tab,
+        Close_Tab: Close_Tab,
+        Close_Other_Tabs: Close_Other_Tabs,
+        Refresh: Refresh,
         closableCount: closableCount,
-        toggleDark: toggleDark,
-        toggleSidebar: toggleSidebar,
-        toggleUser: toggleUser,
-        closeUser: closeUser,
+        Toggle_Dark: Toggle_Dark,
+        Toggle_Sidebar: Toggle_Sidebar,
+        Toggle_User: Toggle_User,
+        Close_User: Close_User,
         settingsOpen: settingsOpen,
-        toggleSettings: toggleSettings,
-        closeSettings: closeSettings,
+        Toggle_Settings: Toggle_Settings,
+        Close_Settings: Close_Settings,
         accents: accents,
         accent: accent,
-        setAccent: setAccent,
+        Set_Accent: Set_Accent,
         rootStyle: rootStyle,
         isAdmin: isAdmin,
         guideVisible: guideVisible,
-        openGuide: openGuide,
-        toggleGuide: toggleGuide,
+        Open_Guide: Open_Guide,
+        Toggle_Guide: Toggle_Guide,
         floatingEnabled: floatingEnabled,
-        toggleFloating: toggleFloating,
+        Toggle_Floating: Toggle_Floating,
         guide: guide,
         activeGuideTab: activeGuideTab,
         currentGuideGroup: currentGuideGroup,
         currentGuideSections: currentGuideSections,
-        copyGuideCode: copyGuideCode,
+        Copy_Guide_Code: Copy_Guide_Code,
         sections: sections,
         model: model,
         currentSection: currentSection,
         isFlush: isFlush,
         saving: saving,
         saveMsg: saveMsg,
-        saveOptions: saveOptions,
+        Save_Options: Save_Options,
         isDirty: isDirty,
-        discardChanges: discardChanges,
+        Discard_Changes: Discard_Changes,
         resetOpen: resetOpen,
-        resetSection: resetSection,
-        resetAll: resetAll,
-        fieldCol: fieldCol,
+        Reset_Section: Reset_Section,
+        Reset_All: Reset_All,
+        Field_Col: Field_Col,
       };
     },
     template: [
@@ -833,29 +862,29 @@
       '    </div>',
       '    <nav class="eva-sb-menu">',
       '      <div v-show="guideVisible" class="eva-sb-group eva-sb-group--fixed">',
-      '        <div class="eva-sb-item" :class="{ \'is-active\': active === \'eva-guide\' }" @click="openGuide">',
+      '        <div class="eva-sb-item" :class="{ \'is-active\': active === \'eva-guide\' }" @click="Open_Guide">',
       '          <i class="eva-sb-ico ri-book-open-line"></i>',
       '          <span class="eva-sb-label">{{ t(\'guide_menu\') }}</span>',
       '        </div>',
       '        <div class="eva-sb-tip">{{ t(\'guide_menu\') }}</div>',
       '      </div>',
       '      <div v-for="m in menu" :key="m.id" class="eva-sb-group">',
-      '        <div class="eva-sb-item" :class="{ \'is-active\': m.id === active, \'is-open\': isOpen(m.id) }" @click="onMenuClick(m)">',
+      '        <div class="eva-sb-item" :class="{ \'is-active\': m.id === active, \'is-open\': Is_Open(m.id) }" @click="On_Menu_Click(m)">',
       '          <eva-icon class="eva-sb-ico" :icon="m.icon"></eva-icon>',
       '          <span class="eva-sb-label">{{ tv(m.label) }}</span>',
-      '          <i v-if="hasChildren(m)" class="eva-sb-arrow ri-arrow-down-s-line" :class="{ \'is-open\': isOpen(m.id) }"></i>',
+      '          <i v-if="Has_Children(m)" class="eva-sb-arrow ri-arrow-down-s-line" :class="{ \'is-open\': Is_Open(m.id) }"></i>',
       '        </div>',
-      '        <div v-if="hasChildren(m)" v-show="isOpen(m.id)" class="eva-sb-sub">',
+      '        <div v-if="Has_Children(m)" v-show="Is_Open(m.id)" class="eva-sb-sub">',
       '          <div v-for="c in m.children" :key="c.id" class="eva-sb-subitem"',
-      '               :class="{ \'is-active\': c.id === active }" @click="openMenu(c.id)">',
+      '               :class="{ \'is-active\': c.id === active }" @click="Open_Menu(c.id)">',
       '            <eva-icon class="eva-sb-subico" :icon="c.icon"></eva-icon>',
       '            <span>{{ tv(c.label) }}</span>',
       '          </div>',
       '        </div>',
-      '        <div v-if="!hasChildren(m)" class="eva-sb-tip">{{ tv(m.label) }}</div>',
-      '        <div v-if="hasChildren(m)" class="eva-sb-flyout">',
+      '        <div v-if="!Has_Children(m)" class="eva-sb-tip">{{ tv(m.label) }}</div>',
+      '        <div v-if="Has_Children(m)" class="eva-sb-flyout">',
       '          <div v-for="c in m.children" :key="c.id" class="eva-flyout-item"',
-      '               :class="{ \'is-active\': c.id === active }" @click="openMenu(c.id)">',
+      '               :class="{ \'is-active\': c.id === active }" @click="Open_Menu(c.id)">',
       '            <eva-icon :icon="c.icon"></eva-icon><span>{{ tv(c.label) }}</span>',
       '          </div>',
       '        </div>',
@@ -869,18 +898,18 @@
       '        <span class="eva-h-title">{{ currentTitle }}</span>',
       '      </div>',
       '      <div class="eva-header-right">',
-      '        <button class="eva-hbtn" :title="t(\'search_tip\')" @click="openSearch"><i class="ri-search-line"></i></button>',
-      '        <button class="eva-hbtn eva-hbtn-collapse" :title="sidebarCollapsed ? t(\'expand_sidebar\') : t(\'collapse_sidebar\')" @click="toggleSidebar">',
+      '        <button class="eva-hbtn" :title="t(\'search_tip\')" @click="Open_Search"><i class="ri-search-line"></i></button>',
+      '        <button class="eva-hbtn eva-hbtn-collapse" :title="sidebarCollapsed ? t(\'expand_sidebar\') : t(\'collapse_sidebar\')" @click="Toggle_Sidebar">',
       '          <i :class="sidebarCollapsed ? \'ri-menu-unfold-line\' : \'ri-menu-fold-line\'"></i>',
       '        </button>',
       '        <button class="eva-hbtn" :title="t(\'notifications\')"><i class="ri-notification-3-line"></i></button>',
-      '        <button class="eva-hbtn" :title="t(\'settings\')" @click="toggleSettings"><i class="ri-settings-3-line"></i></button>',
-      '        <button class="eva-hbtn" @click="toggleDark" :title="dark ? t(\'to_light\') : t(\'to_dark\')">',
+      '        <button class="eva-hbtn" :title="t(\'settings\')" @click="Toggle_Settings"><i class="ri-settings-3-line"></i></button>',
+      '        <button class="eva-hbtn" @click="Toggle_Dark" :title="dark ? t(\'to_light\') : t(\'to_dark\')">',
       '          <i :class="dark ? \'ri-sun-line\' : \'ri-moon-line\'"></i>',
       '        </button>',
-      '        <div class="eva-user-wrap" :class="{ \'is-open\': userOpen }" @mouseleave="closeUser">',
+      '        <div class="eva-user-wrap" :class="{ \'is-open\': userOpen }" @mouseleave="Close_User">',
       '          <button type="button" class="eva-user" aria-haspopup="menu"',
-      '                  :aria-expanded="userOpen ? \'true\' : \'false\'" @click="toggleUser">',
+      '                  :aria-expanded="userOpen ? \'true\' : \'false\'" @click="Toggle_User">',
       '            <span class="eva-avatar">',
       '              <img v-if="user.avatar" :src="user.avatar" :alt="user.name">',
       '              <template v-else>{{ user.initials }}</template>',
@@ -907,15 +936,15 @@
       '    <div class="eva-tabsbar">',
       '      <div class="eva-tabs">',
       '        <div v-for="t in tabs" :key="t.id" class="eva-tab"',
-      '             :class="{ \'is-active\': t.id === activeTab }" @click="selectTab(t.id)">',
+      '             :class="{ \'is-active\': t.id === activeTab }" @click="Select_Tab(t.id)">',
       '          <eva-icon class="eva-tab-ico" :icon="t.icon"></eva-icon>',
       '          <span>{{ tv(t.label) }}</span>',
-      '          <i v-if="t.closable" class="eva-tab-close ri-close-line" @click.stop="closeTab(t.id)"></i>',
+      '          <i v-if="t.closable" class="eva-tab-close ri-close-line" @click.stop="Close_Tab(t.id)"></i>',
       '        </div>',
       '      </div>',
       '      <div class="eva-tabs-right">',
-      '        <button class="eva-tbtn" :title="t(\'refresh_page\')" @click="refresh"><i class="ri-refresh-line"></i></button>',
-      '        <button v-if="closableCount" class="eva-tbtn" :title="t(\'close_other_tabs\')" @click="closeOtherTabs"><i class="ri-close-circle-line"></i></button>',
+      '        <button class="eva-tbtn" :title="t(\'refresh_page\')" @click="Refresh"><i class="ri-Refresh-line"></i></button>',
+      '        <button v-if="closableCount" class="eva-tbtn" :title="t(\'close_other_tabs\')" @click="Close_Other_Tabs"><i class="ri-close-circle-line"></i></button>',
       '        <div class="eva-crumb">',
       '          <i class="ri-home-4-line"></i><i class="eva-crumb-sep ri-arrow-right-s-line"></i>',
       '          <span>{{ t(\'admin_home\') }}</span><i class="eva-crumb-sep ri-arrow-right-s-line"></i>',
@@ -949,7 +978,7 @@
       '            <section v-for="s in currentGuideSections" :key="s.id" :id="\'eva-guide-\' + activeGuideTab + \'-\' + s.id" class="eva-guide-card" :class="{ \'is-quick\': s.steps, \'is-framework\': s.cards }">',
       '              <div class="eva-guide-card-head">',
       '                <h2><i :class="s.icon"></i><span>{{ s.title }}</span></h2>',
-      '                <button v-if="s.code" type="button" class="eva-guide-copy" @click="copyGuideCode(s.code)"><i class="ri-file-copy-line"></i>复制代码</button>',
+      '                <button v-if="s.code" type="button" class="eva-guide-copy" @click="Copy_Guide_Code(s.code)"><i class="ri-file-copy-line"></i>复制代码</button>',
       '              </div>',
       '              <p>{{ s.desc }}</p>',
       '              <div v-if="s.cards" class="eva-guide-fw-cards"><div v-for="card in s.cards" :key="card.title" class="eva-guide-fw-card"><i :class="card.icon"></i><strong>{{ card.title }}</strong><span>{{ card.desc }}</span></div></div>',
@@ -958,7 +987,7 @@
       '              <pre v-if="s.code" class="eva-guide-code"><code>{{ s.code }}</code></pre>',
       '              <div v-if="s.codeBlocks" class="eva-guide-codeblocks">',
       '                <div v-for="(block, bi) in s.codeBlocks" :key="bi" class="eva-guide-codeblock">',
-      '                  <div class="eva-guide-codebar"><strong>{{ block.title }}</strong><button type="button" class="eva-guide-copy" @click="copyGuideCode(block.code)"><i class="ri-file-copy-line"></i>复制代码</button></div>',
+      '                  <div class="eva-guide-codebar"><strong>{{ block.title }}</strong><button type="button" class="eva-guide-copy" @click="Copy_Guide_Code(block.code)"><i class="ri-file-copy-line"></i>复制代码</button></div>',
       '                  <pre class="eva-guide-code"><code>{{ block.code }}</code></pre>',
       '                </div>',
       '              </div>',
@@ -989,18 +1018,18 @@
       '      </div>',
       '      <div v-else-if="currentSection" class="eva-form" :class="{ \'eva-form--flush\': isFlush }">',
       '        <div class="eva-form-card">',
-      '          <div v-for="f in currentSection.fields" :key="f.id" class="eva-field-row" :class="fieldCol(f)">',
+      '          <div v-for="f in currentSection.fields" :key="f.id" class="eva-field-row" :class="Field_Col(f)">',
       '            <div class="eva-field-meta"><span class="eva-field-title">{{ tv(f.title) }}</span><span v-if="tv(f.desc)" class="eva-field-desc">{{ tv(f.desc) }}</span></div>',
       '            <div class="eva-field-control"><eva-field :field="f" v-model="model[f.id]"></eva-field></div>',
       '          </div>',
       '        </div>',
       '        <div class="eva-savedock" v-show="isDirty || saveMsg">',
-      '          <button type="button" class="eva-savefab" :disabled="saving || !isDirty" @click="saveOptions"><i class="ri-save-3-line"></i><span>{{ saveMsg || t(\'save\') }}</span></button>',
+      '          <button type="button" class="eva-savefab" :disabled="saving || !isDirty" @click="Save_Options"><i class="ri-save-3-line"></i><span>{{ saveMsg || t(\'save\') }}</span></button>',
       '          <div class="eva-reset-wrap" @mouseleave="resetOpen = false">',
       '            <button type="button" class="eva-reset-btn" :disabled="saving" :title="t(\'restore_default\')" @click="resetOpen = !resetOpen"><i class="ri-arrow-go-back-line"></i></button>',
       '            <div class="eva-reset-menu" v-show="resetOpen">',
-      '              <button type="button" class="eva-reset-item" @click="resetSection">{{ t(\'reset_section\') }}</button>',
-      '              <button type="button" class="eva-reset-item" @click="resetAll">{{ t(\'reset_all\') }}</button>',
+      '              <button type="button" class="eva-reset-item" @click="Reset_Section">{{ t(\'reset_section\') }}</button>',
+      '              <button type="button" class="eva-reset-item" @click="Reset_All">{{ t(\'reset_all\') }}</button>',
       '            </div>',
       '          </div>',
       '        </div>',
@@ -1012,11 +1041,11 @@
       '      </div>',
       '    </main>',
       '  </div>',
-      '  <div class="eva-drawer-mask" v-show="settingsOpen" @click="closeSettings"></div>',
+      '  <div class="eva-drawer-mask" v-show="settingsOpen" @click="Close_Settings"></div>',
       '  <aside class="eva-drawer" :class="{ \'is-open\': settingsOpen }" role="dialog" :aria-label="t(\'settings\')">',
       '    <div class="eva-drawer-head">',
       '      <div class="eva-drawer-titles"><i class="ri-settings-3-line"></i><span>{{ t(\'settings\') }}</span></div>',
-      '      <button type="button" class="eva-drawer-close" :title="t(\'close\')" @click="closeSettings"><i class="ri-close-line"></i></button>',
+      '      <button type="button" class="eva-drawer-close" :title="t(\'close\')" @click="Close_Settings"><i class="ri-close-line"></i></button>',
       '    </div>',
       '    <div class="eva-drawer-body">',
       '      <div class="eva-set-section">',
@@ -1026,47 +1055,47 @@
       '          <div class="eva-lang-wrap" :class="{ \'is-open\': langOpen }">',
       '            <button type="button" class="eva-lang-btn" @click="langOpen = !langOpen"><span v-if="curLang.flag" class="eva-lang-flag fi" :class="\'fi-\' + curLang.flag"></span><span>{{ tv(curLang.label) }}</span><i class="ri-arrow-down-s-line eva-lang-caret"></i></button>',
       '            <div class="eva-lang-menu" role="menu">',
-      '              <button v-for="l in evaLangs" :key="l.code" type="button" class="eva-lang-item" :class="{ \'is-active\': l.code === evaI18nState.lang }" role="menuitem" @click="chooseLang(l.code)"><span v-if="l.flag" class="eva-lang-flag fi" :class="\'fi-\' + l.flag"></span>{{ tv(l.label) }}</button>',
+      '              <button v-for="l in evaLangs" :key="l.code" type="button" class="eva-lang-item" :class="{ \'is-active\': l.code === evaI18nState.lang }" role="menuitem" @click="Choose_Lang(l.code)"><span v-if="l.flag" class="eva-lang-flag fi" :class="\'fi-\' + l.flag"></span>{{ tv(l.label) }}</button>',
       '            </div>',
       '          </div>',
       '        </div>',
       '        <div class="eva-set-row">',
       '          <div class="eva-set-label"><i class="ri-contrast-2-line"></i><span>{{ t(\'dark_mode\') }}</span></div>',
-      '          <button type="button" class="eva-switch" :class="{ \'is-on\': dark }" role="switch" :aria-checked="dark ? \'true\' : \'false\'" @click="toggleDark"><span class="eva-switch-dot"></span></button>',
+      '          <button type="button" class="eva-switch" :class="{ \'is-on\': dark }" role="switch" :aria-checked="dark ? \'true\' : \'false\'" @click="Toggle_Dark"><span class="eva-switch-dot"></span></button>',
       '        </div>',
       '        <div class="eva-set-row">',
       '          <div class="eva-set-label"><i class="ri-layout-left-line"></i><span>{{ t(\'collapse_sidebar_label\') }}</span></div>',
-      '          <button type="button" class="eva-switch" :class="{ \'is-on\': sidebarCollapsed }" role="switch" :aria-checked="sidebarCollapsed ? \'true\' : \'false\'" @click="toggleSidebar"><span class="eva-switch-dot"></span></button>',
+      '          <button type="button" class="eva-switch" :class="{ \'is-on\': sidebarCollapsed }" role="switch" :aria-checked="sidebarCollapsed ? \'true\' : \'false\'" @click="Toggle_Sidebar"><span class="eva-switch-dot"></span></button>',
       '        </div>',
       '      </div>',
       '      <div class="eva-set-section" v-if="isAdmin">',
       '        <p class="eva-set-title">{{ t(\'features\') }}</p>',
       '        <div class="eva-set-row">',
       '          <div class="eva-set-label"><i class="ri-book-open-line"></i><span>{{ t(\'show_guide\') }}</span></div>',
-      '          <button type="button" class="eva-switch" :class="{ \'is-on\': guideVisible }" role="switch" :aria-checked="guideVisible ? \'true\' : \'false\'" @click="toggleGuide"><span class="eva-switch-dot"></span></button>',
+      '          <button type="button" class="eva-switch" :class="{ \'is-on\': guideVisible }" role="switch" :aria-checked="guideVisible ? \'true\' : \'false\'" @click="Toggle_Guide"><span class="eva-switch-dot"></span></button>',
       '        </div>',
       '        <div class="eva-set-row">',
       '          <div class="eva-set-label"><i class="ri-window-line"></i><span>{{ t(\'floating\') }}</span></div>',
-      '          <button type="button" class="eva-switch" :class="{ \'is-on\': floatingEnabled }" role="switch" :aria-checked="floatingEnabled ? \'true\' : \'false\'" @click="toggleFloating"><span class="eva-switch-dot"></span></button>',
+      '          <button type="button" class="eva-switch" :class="{ \'is-on\': floatingEnabled }" role="switch" :aria-checked="floatingEnabled ? \'true\' : \'false\'" @click="Toggle_Floating"><span class="eva-switch-dot"></span></button>',
       '        </div>',
       '      </div>',
       '      <div class="eva-set-section">',
       '        <p class="eva-set-title">{{ t(\'theme_color\') }}</p>',
       '        <div class="eva-accents">',
-      '          <button v-for="a in accents" :key="a.key" type="button" class="eva-accent" :class="{ \'is-active\': accent === a.key }" :style="{ background: a.color }" :title="a.label" @click="setAccent(a)"></button>',
+      '          <button v-for="a in accents" :key="a.key" type="button" class="eva-accent" :class="{ \'is-active\': accent === a.key }" :style="{ background: a.color }" :title="a.label" @click="Set_Accent(a)"></button>',
       '        </div>',
       '      </div>',
       '    </div>',
       '  </aside>',
-      '  <div class="eva-search-mask" v-show="searchOpen" @click="closeSearch"></div>',
+      '  <div class="eva-search-mask" v-show="searchOpen" @click="Close_Search"></div>',
       '  <div class="eva-search" v-show="searchOpen" role="dialog" aria-label="搜索">',
       '    <div class="eva-search-bar">',
       '      <i class="ri-search-line"></i>',
-      '      <input ref="searchInput" class="eva-search-input" type="text" v-model="searchQuery" :placeholder="t(\'search_ph\')" @keydown.enter="onSearchEnter" @keydown.esc="closeSearch">',
-      '      <button type="button" class="eva-search-kbd" @click="closeSearch">ESC</button>',
+      '      <input ref="searchInput" class="eva-search-input" type="text" v-model="searchQuery" :placeholder="t(\'search_ph\')" @keydown.enter="On_Search_Enter" @keydown.esc="Close_Search">',
+      '      <button type="button" class="eva-search-kbd" @click="Close_Search">ESC</button>',
       '    </div>',
       '    <div class="eva-search-results">',
-      '      <div v-for="r in searchResults" :key="r.sectionId + \'/\' + r.id" class="eva-search-item" :class="{ \'is-active\': r.sectionId === active }" @click="gotoResult(r)">',
+      '      <div v-for="r in searchResults" :key="r.sectionId + \'/\' + r.id" class="eva-search-item" :class="{ \'is-active\': r.sectionId === active }" @click="Goto_Result(r)">',
       '        <i class="eva-search-ico" :class="r.icon"></i>',
       '        <div class="eva-search-text">',
       '          <span class="eva-search-label">{{ r.label }}</span>',
@@ -1093,6 +1122,7 @@
       inheritAttrs: false,
       props: { icon: { type: String, default: '' } },
       computed: {
+        // Purpose: Handle kind behavior.
         kind: function () {
           var s = (this.icon || '').trim();
           if (!s) { return 'empty'; }
@@ -1132,6 +1162,7 @@
       props: ['field', 'modelValue'],
       emits: ['update:modelValue'],
       computed: {
+        // Purpose: Handle comp behavior.
         comp: function () {
           var reg = window.EvaFields || {};
           return reg[this.field && this.field.type] || reg.text || null;

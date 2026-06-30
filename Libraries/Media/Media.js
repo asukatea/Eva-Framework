@@ -7,17 +7,22 @@
   if (typeof window === 'undefined') { return; }
   window.EvaUI = window.EvaUI || {};
 
-  function cfg() { return (window.EvaFW && window.EvaFW.config) || {}; }
-  function restBase() { return (cfg().restUrl || '/wp-json/').replace(/\/+$/, '') + '/'; }
-  function isImage(item) {
+  // Purpose: Read the Eva runtime config injected by PHP.
+  function Cfg() { return (window.EvaFW && window.EvaFW.config) || {}; }
+  // Purpose: Build the WordPress REST API base URL.
+  function Rest_Base() { return (Cfg().restUrl || '/wp-json/').replace(/\/+$/, '') + '/'; }
+  // Purpose: Detect whether a media item is an image.
+  function Is_Image(item) {
     var url = item && item.url ? String(item.url) : String(item || '');
     return /\.(png|jpe?g|gif|webp|svg)(\?|$)/i.test(url) || /^image\//i.test(item && item.mime ? item.mime : '');
   }
-  function fileName(url) {
+  // Purpose: Extract a display filename from a URL.
+  function File_Name(url) {
     url = String(url || '');
     return decodeURIComponent((url.split('/').pop() || '').split('?')[0] || 'media');
   }
-  function formatMediaItem(json) {
+  // Purpose: Normalize a WordPress media REST item for eva-media.
+  function Format_Media_Item(json) {
     var sizes = json.media_details && json.media_details.sizes ? json.media_details.sizes : {};
     var thumb = sizes.thumbnail && sizes.thumbnail.source_url ? sizes.thumbnail.source_url : '';
     var medium = sizes.medium && sizes.medium.source_url ? sizes.medium.source_url : '';
@@ -25,8 +30,8 @@
       id: json.id || '',
       url: json.source_url || '',
       thumb: thumb || medium || json.source_url || '',
-      title: (json.title && json.title.rendered) || json.filename || fileName(json.source_url || ''),
-      filename: json.filename || fileName(json.source_url || ''),
+      title: (json.title && json.title.rendered) || json.filename || File_Name(json.source_url || ''),
+      filename: json.filename || File_Name(json.source_url || ''),
       mime: json.mime_type || '',
       width: json.media_details && json.media_details.width ? json.media_details.width : '',
       height: json.media_details && json.media_details.height ? json.media_details.height : '',
@@ -49,6 +54,7 @@
       showDrop: { type: Boolean, default: true }
     },
     emits: ['update:modelValue'],
+    // Purpose: Initialize component state and exposed reactive data.
     data: function () {
       return {
         drag: false,
@@ -65,10 +71,12 @@
       };
     },
     computed: {
+      // Purpose: Handle mode behavior.
       mode: function () {
         var lib = this.library || this.mime || 'image';
         return lib === 'media' ? 'image' : lib;
       },
+      // Purpose: Handle items behavior.
       items: function () {
         var v = this.modelValue;
         if (!v) { return []; }
@@ -77,26 +85,30 @@
         }
         return [this.normalizeItem(v)].filter(Boolean);
       },
+      // Purpose: Handle accept behavior.
       accept: function () {
         if (this.mode === 'image') { return 'image/png,image/jpeg,image/gif,image/webp,image/svg+xml'; }
         return '';
       },
+      // Purpose: Handle max Bytes behavior.
       maxBytes: function () {
         return Math.max(0, Number(this.maxSize || 0)) * 1024 * 1024;
       },
+      // Purpose: Handle selected Ids behavior.
       selectedIds: function () {
         return this.browserPicked.map(function (item) { return String(item.id || item.url); });
       }
     },
     methods: {
+      // Purpose: Normalize normalize Item data.
       normalizeItem: function (value) {
         if (value && typeof value === 'object') {
           return {
             id: value.id || value.ID || '',
             url: value.url || value.source_url || '',
             thumb: value.thumb || value.thumbnail || value.url || value.source_url || '',
-            title: value.title || value.filename || fileName(value.url || value.source_url || ''),
-            filename: value.filename || fileName(value.url || value.source_url || ''),
+            title: value.title || value.filename || File_Name(value.url || value.source_url || ''),
+            filename: value.filename || File_Name(value.url || value.source_url || ''),
             mime: value.mime || value.mime_type || '',
             width: value.width || '',
             height: value.height || '',
@@ -106,14 +118,16 @@
         if (typeof value === 'number' || /^[0-9]+$/.test(String(value))) {
           return { id: value, url: '', title: '#' + value, filename: '#' + value };
         }
-        return { id: '', url: String(value), title: fileName(value), filename: fileName(value), mime: '' };
+        return { id: '', url: String(value), title: File_Name(value), filename: File_Name(value), mime: '' };
       },
+      // Purpose: Handle serialize Item behavior.
       serializeItem: function (item) {
         var type = this.returnType || (this.multiple ? 'array' : 'url');
         if (type === 'id') { return item.id || ''; }
         if (type === 'array' || type === 'object') { return item; }
         return item.url || '';
       },
+      // Purpose: Handle emit Items behavior.
       emitItems: function (items) {
         if (this.multiple) {
           this.$emit('update:modelValue', items.map(this.serializeItem));
@@ -121,16 +135,19 @@
         }
         this.$emit('update:modelValue', items.length ? this.serializeItem(items[0]) : '');
       },
+      // Purpose: Open open Library UI or state.
       openLibrary: function () {
         this.browserOpen = true;
         this.browserPicked = this.items.slice();
         this.browserPage = 1;
         this.loadLibrary();
       },
+      // Purpose: Close close Library UI or state.
       closeLibrary: function () {
         this.browserOpen = false;
         this.browserError = '';
       },
+      // Purpose: Handle load Library behavior.
       loadLibrary: function () {
         var self = this;
         if (!window.fetch) {
@@ -144,15 +161,15 @@
         if (this.browserQuery.trim()) { params.set('search', this.browserQuery.trim()); }
         this.browserLoading = true;
         this.browserError = '';
-        window.fetch(restBase() + 'wp/v2/media?' + params.toString(), {
+        window.fetch(Rest_Base() + 'wp/v2/media?' + params.toString(), {
           credentials: 'same-origin',
-          headers: { 'X-WP-Nonce': cfg().restNonce || '' }
+          headers: { 'X-WP-Nonce': Cfg().restNonce || '' }
         }).then(function (res) {
           var pages = parseInt(res.headers.get('X-WP-TotalPages') || '1', 10);
           self.browserTotalPages = Math.max(1, pages || 1);
           return res.json().then(function (json) {
             if (!res.ok) { throw new Error(json && json.message ? json.message : '媒体库加载失败'); }
-            self.browserItems = Array.isArray(json) ? json.map(formatMediaItem) : [];
+            self.browserItems = Array.isArray(json) ? json.map(Format_Media_Item) : [];
           });
         }).catch(function (err) {
           self.browserItems = [];
@@ -161,20 +178,24 @@
           self.browserLoading = false;
         });
       },
+      // Purpose: Handle search Library behavior.
       searchLibrary: function () {
         this.browserPage = 1;
         this.loadLibrary();
       },
+      // Purpose: Update set Library Page state.
       setLibraryPage: function (page) {
         page = Math.min(this.browserTotalPages, Math.max(1, page));
         if (page === this.browserPage) { return; }
         this.browserPage = page;
         this.loadLibrary();
       },
+      // Purpose: Check is Picked state.
       isPicked: function (item) {
         var key = String(item.id || item.url);
         return this.selectedIds.indexOf(key) !== -1;
       },
+      // Purpose: Toggle toggle Pick state.
       togglePick: function (item) {
         var key = String(item.id || item.url);
         if (!this.multiple) {
@@ -186,21 +207,26 @@
         if (idx >= 0) { next.splice(idx, 1); } else { next.push(item); }
         this.browserPicked = next;
       },
+      // Purpose: Handle apply Library behavior.
       applyLibrary: function () {
         this.emitItems(this.browserPicked);
         this.closeLibrary();
       },
+      // Purpose: Handle choose File behavior.
       chooseFile: function () {
         this.$refs.file && this.$refs.file.click();
       },
+      // Purpose: Handle on File Change behavior.
       onFileChange: function (event) {
         this.uploadFiles(event.target.files);
         event.target.value = '';
       },
+      // Purpose: Handle on Drop behavior.
       onDrop: function (event) {
         this.drag = false;
         this.uploadFiles(event.dataTransfer.files);
       },
+      // Purpose: Handle upload Files behavior.
       uploadFiles: function (files) {
         var self = this;
         files = Array.prototype.slice.call(files || []);
@@ -227,16 +253,17 @@
             self.uploading = false;
           });
       },
+      // Purpose: Handle upload File behavior.
       uploadFile: function (file) {
         if (this.maxBytes && file.size > this.maxBytes) {
           return Promise.reject(new Error('文件大小超过限制：' + this.maxSize + 'MB'));
         }
         var headers = {
-          'X-WP-Nonce': cfg().restNonce || '',
+          'X-WP-Nonce': Cfg().restNonce || '',
           'Content-Disposition': 'attachment; filename="' + encodeURIComponent(file.name) + '"'
         };
         if (file.type) { headers['Content-Type'] = file.type; }
-        return window.fetch(restBase() + 'wp/v2/media', {
+        return window.fetch(Rest_Base() + 'wp/v2/media', {
           method: 'POST',
           headers: headers,
           credentials: 'same-origin',
@@ -244,22 +271,25 @@
         }).then(function (res) {
           return res.json().then(function (json) {
             if (!res.ok) { throw new Error(json && json.message ? json.message : '上传失败'); }
-            var item = formatMediaItem(json);
+            var item = Format_Media_Item(json);
             item.filename = item.filename || file.name;
             item.size = item.size || (Math.round(file.size / 1024) + ' KB');
             return item;
           });
         });
       },
+      // Purpose: Handle remove At behavior.
       removeAt: function (index) {
         var next = this.items.slice();
         next.splice(index, 1);
         this.emitItems(next);
       },
+      // Purpose: Handle replace At behavior.
       replaceAt: function (index) {
         this.removeAt(index);
         this.openLibrary();
       },
+      // Purpose: Handle meta Text behavior.
       metaText: function (item) {
         var parts = [];
         if (item.width && item.height) { parts.push(item.width + ' x ' + item.height); }
@@ -267,7 +297,7 @@
         if (item.mime) { parts.push(item.mime.replace(/^image\//, '')); }
         return parts.join(' · ');
       },
-      isImage: isImage
+      Is_Image: Is_Image
     },
     template: [
       '<div class="eva-media" :class="{ \'is-drag\': drag, \'is-uploading\': uploading, \'is-compact\': !showDrop }">',
@@ -275,7 +305,7 @@
       '  <div class="eva-media-list" v-if="items.length">',
       '    <div class="eva-media-item" v-for="(item, i) in items" :key="item.url || item.id || i">',
       '      <div class="eva-media-thumb">',
-      '        <img v-if="preview && item.url && isImage(item)" :src="item.thumb || item.url" :alt="item.title || item.filename">',
+      '        <img v-if="preview && item.url && Is_Image(item)" :src="item.thumb || item.url" :alt="item.title || item.filename">',
       '        <i v-else class="ri-image-line"></i>',
       '      </div>',
       '      <div class="eva-media-info">',
@@ -315,7 +345,7 @@
       '        <div v-else-if="!browserItems.length" class="eva-media-browser-state">没有找到媒体文件</div>',
       '        <div v-else class="eva-media-browser-grid">',
       '          <button v-for="item in browserItems" :key="item.id || item.url" type="button" class="eva-media-browser-card" :class="{ \'is-picked\': isPicked(item) }" @click="togglePick(item)">',
-      '            <span class="eva-media-browser-thumb"><img v-if="item.url && isImage(item)" :src="item.thumb || item.url" :alt="item.title"><i v-else class="ri-file-line"></i></span>',
+      '            <span class="eva-media-browser-thumb"><img v-if="item.url && Is_Image(item)" :src="item.thumb || item.url" :alt="item.title"><i v-else class="ri-file-line"></i></span>',
       '            <span class="eva-media-browser-name">{{ item.title || item.filename }}</span>',
       '            <em v-if="isPicked(item)" class="eva-media-browser-check"><i class="ri-check-line"></i></em>',
       '          </button>',
