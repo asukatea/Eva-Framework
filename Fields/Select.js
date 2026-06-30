@@ -19,7 +19,7 @@
     props: ['field', 'modelValue'],
     emits: ['update:modelValue'],
     computed: {
-      // Purpose: Handle ajax Component behavior.
+      // 功能：处理 ajax Component 相关逻辑。
       ajaxComponent: function () {
         return window.EvaFields && window.EvaFields.ajax_select ? window.EvaFields.ajax_select : null;
       }
@@ -28,6 +28,7 @@
     template: [
       '<component v-if="field.ajax && ajaxComponent" :is="ajaxComponent" :field="field" :model-value="modelValue" @update:model-value="$emit(\'update:modelValue\', $event)"></component>',
       '<eva-select v-else :options="field.options" :placeholder="field.placeholder || t(\'please_select\')"',
+      ' v-bind="field.attributes || {}"',
       ' :searchable="field.searchable"',
       ' :empty-message="field.empty_message"',
       ' :multiple="field.multiple"',

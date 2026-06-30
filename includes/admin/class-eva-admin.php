@@ -181,6 +181,7 @@ class Admin
         wp_enqueue_script('eva-framework', EVA_FW_URL . 'assets/eva-app.js', $field_deps, \Eva::asset_ver('assets/eva-app.js'), true);
 
         // 把当前页完整配置 + 运行时状态注入前端 window.EvaFW。
+        $sections = \Eva::prepare_sections($current['sections']);
         wp_localize_script('eva-framework', 'EvaFW', [
             'version'  => EVA_FW_VERSION,
             'adminUrl' => admin_url(),
@@ -191,8 +192,10 @@ class Admin
                 'subtitle' => $current['subtitle'],
                 'menu'     => array_values($current['menu']),
                 // 序列化前预处理（执行 callback 字段、剔除闭包），保证可安全 JSON 化。
-                'sections' => \Eva::prepare_sections($current['sections']),
+                'sections' => $sections,
                 'optionId' => $current['option_id'],
+                // 依赖规则中声明的跨设置来源值，供 Vue 在当前页面初始化时判断。
+                'dependencySources' => Admin\Dependency::dependency_sources($sections),
                 // 注入已存值供前端回填。
                 'values'   => \Eva::get_values($current['option_id']),
             ], \Eva::runtime()),
@@ -269,104 +272,6 @@ class Admin
      */
     public function ajax_search_posts()
     {
-        if (! check_ajax_referer('eva_fw_guide', 'nonce', false)) {
-            wp_send_json_error(['msg' => 'bad_nonce'], 403);
-        }
-        if (! current_user_can('edit_posts')) {
-            wp_send_json_error(['msg' => 'forbidden'], 403);
-        }
-
-        $query = isset($_GET['q']) ? sanitize_text_field(wp_unslash($_GET['q'])) : '';
-        $include = isset($_GET['include']) ? $this->ajax_search_include_ids(wp_unslash($_GET['include'])) : [];
-        $limit = isset($_GET['limit']) ? max(1, min(30, absint($_GET['limit']))) : 20;
-        $post_types = $this->ajax_search_post_types();
-
-        $query_length = function_exists('mb_strlen') ? mb_strlen($query) : strlen($query);
-        if (! $include && $query_length < 2) {
-            wp_send_json_success(['items' => []]);
-        }
-
-        $args = [
-            'post_type'      => $post_types,
-            'post_status'    => ['publish', 'draft', 'pending', 'future', 'private'],
-            'posts_per_page' => $limit,
-            'no_found_rows'  => true,
-            'orderby'        => 'date',
-            'order'          => 'DESC',
-        ];
-
-        if ($include) {
-            $args['post__in'] = $include;
-            $args['orderby'] = 'post__in';
-        } else {
-            $args['s'] = $query;
-        }
-
-        $posts = new \WP_Query($args);
-        $items = [];
-
-        foreach ($posts->posts as $post) {
-            $type_object = get_post_type_object($post->post_type);
-            $type_label = ($type_object && ! empty($type_object->labels->singular_name))
-                ? $type_object->labels->singular_name
-                : $post->post_type;
-            $title = get_the_title($post);
-            if ($title === '') {
-                $title = '（无标题）';
-            }
-            $items[] = [
-                'value'  => (string) $post->ID,
-                'label'  => $title,
-                'type'   => $type_label,
-                'status' => get_post_status($post),
-            ];
-        }
-
-        wp_send_json_success(['items' => $items]);
-    }
-
-    /**
-     * 从请求中读取并校验可搜索 post type。
-     *
-     * @return string[]
-     */
-    private function ajax_search_post_types()
-    {
-        $raw = isset($_GET['post_type']) ? wp_unslash($_GET['post_type']) : ['post', 'page'];
-        if (is_string($raw)) {
-            $raw = explode(',', $raw);
-        }
-        $types = [];
-        foreach ((array) $raw as $type) {
-            $type = sanitize_key($type);
-            $object = $type ? get_post_type_object($type) : null;
-            if ($object && ! empty($object->show_ui)) {
-                $types[] = $type;
-            }
-        }
-        return $types ?: ['post', 'page'];
-    }
-
-    /**
-     * 解析 AJAX 回填用的文章 ID 列表。
-     *
-     * @param mixed $raw include 参数，可为逗号字符串或数组。
-     * @return int[]
-     */
-    private function ajax_search_include_ids($raw)
-    {
-        if (is_string($raw)) {
-            $raw = explode(',', $raw);
-        }
-
-        $ids = [];
-        foreach ((array) $raw as $id) {
-            $id = absint($id);
-            if ($id > 0) {
-                $ids[] = $id;
-            }
-        }
-
-        return array_values(array_unique($ids));
+        Admin\Fields\Select::ajax_search_posts();
     }
 }

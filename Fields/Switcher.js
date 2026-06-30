@@ -22,7 +22,8 @@
     },
     template:
       '<button type="button" class="eva-f-switch" :class="{ \'is-on\': isOn }"' +
+      ' :disabled="!!field.disabled"' +
       ' role="switch" :aria-checked="isOn ? \'true\' : \'false\'"' +
-      ' @click="$emit(\'update:modelValue\', isOn ? 0 : 1)"><span class="eva-f-switch-dot"></span></button>'
+      ' @click="field.disabled ? null : $emit(\'update:modelValue\', isOn ? 0 : 1)"><span class="eva-f-switch-dot"></span></button>'
   };
 })();

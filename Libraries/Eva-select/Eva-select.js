@@ -42,7 +42,7 @@
   window.EvaUI.Select = {
     props: ['modelValue', 'options', 'placeholder', 'searchable', 'emptyMessage', 'multiple', 'sortable'],
     emits: ['update:modelValue'],
-    // Purpose: Initialize component state and exposed reactive data.
+    // 功能：初始化组件响应式状态与对外数据。
     data: function () {
       // active 是过滤后 flatItems 的全局序号；dropUp 由触发器上下可用空间动态决定。
       return { open: false, active: -1, query: '', dropUp: false, dragIndex: null };
@@ -73,7 +73,7 @@
         }
         return out;
       },
-      // Purpose: Handle all Items behavior.
+      // 功能：处理 all Items 相关逻辑。
       allItems: function () {
         var out = [];
         this.groups.forEach(function (g) { g.items.forEach(function (it) { out.push(it); }); });
@@ -95,7 +95,7 @@
         });
         return out;
       },
-      // Purpose: Handle flat Items behavior.
+      // 功能：处理 flat Items 相关逻辑。
       flatItems: function () {
         var out = [];
         this.filteredGroups.forEach(function (g) { g.items.forEach(function (it) { out.push(it); }); });
@@ -107,33 +107,33 @@
         if (this.searchable === false || this.searchable === 'false') { return false; }
         return this.allItems.length >= 8;
       },
-      // Purpose: Handle ph behavior.
+      // 功能：处理 ph 相关逻辑。
       ph: function () { return this.placeholder || '请选择'; },
-      // Purpose: Handle empty Msg behavior.
+      // 功能：处理 empty Msg 相关逻辑。
       emptyMsg: function () { return this.emptyMessage || '无匹配项'; },
-      // Purpose: Check is Multiple state.
+      // 功能：判断 is Multiple 状态。
       isMultiple: function () {
         return this.multiple === true || this.multiple === 'true';
       },
-      // Purpose: Check can Sort state.
+      // 功能：判断 can Sort 状态。
       canSort: function () {
         return this.isMultiple && (this.sortable === true || this.sortable === 'true');
       },
-      // Purpose: Handle selected Values behavior.
+      // 功能：处理 selected Values 相关逻辑。
       selectedValues: function () {
         if (this.isMultiple) {
           return Array.isArray(this.modelValue) ? this.modelValue.map(String) : [];
         }
         return this.modelValue == null || this.modelValue === '' ? [] : [String(this.modelValue)];
       },
-      // Purpose: Handle selected Items behavior.
+      // 功能：处理 selected Items 相关逻辑。
       selectedItems: function () {
         var self = this;
         return this.selectedValues.map(function (value) {
           return self.allItems.filter(function (it) { return String(it.value) === value; })[0] || { value: value, label: value };
         });
       },
-      // Purpose: Handle current Label behavior.
+      // 功能：处理 current Label 相关逻辑。
       currentLabel: function () {
         var self = this;
         var hit = this.allItems.filter(function (it) { return String(it.value) === String(self.modelValue); })[0];
@@ -164,7 +164,7 @@
       }
     },
     methods: {
-      // Purpose: Toggle toggle state.
+      // 功能：切换 toggle 状态。
       toggle: function () { this.open ? this.close() : this.openMenu(); },
       // 打开面板时同步当前选中项为 active，并绑定捕获阶段的外部点击监听。
       openMenu: function () {
@@ -196,7 +196,7 @@
         var above = r.top;
         this.dropUp = (below < ph + 8) && (above > below);
       },
-      // Purpose: Handle focus Trigger behavior.
+      // 功能：处理 focus Trigger 相关逻辑。
       focusTrigger: function () {
         var self = this;
         this.$nextTick(function () {
@@ -222,22 +222,22 @@
         this.close();
         this.focusTrigger();
       },
-      // Purpose: Check is Selected state.
+      // 功能：判断 is Selected 状态。
       isSelected: function (it) {
         return this.selectedValues.indexOf(String(it.value)) !== -1;
       },
-      // Purpose: Handle remove Value behavior.
+      // 功能：移除 remove Value 对应条目。
       removeValue: function (value) {
         if (!this.isMultiple) { return; }
         var values = this.selectedValues.filter(function (item) { return item !== String(value); });
         this.$emit('update:modelValue', values);
       },
-      // Purpose: Handle drag Start behavior.
+      // 功能：处理 drag Start 相关逻辑。
       dragStart: function (index) {
         if (!this.canSort) { return; }
         this.dragIndex = index;
       },
-      // Purpose: Handle drop Value behavior.
+      // 功能：处理 drop Value 相关逻辑。
       dropValue: function (index) {
         if (!this.canSort || this.dragIndex === null || this.dragIndex === index) {
           this.dragIndex = null;
@@ -277,7 +277,7 @@
         }
       }
     },
-    // Purpose: Clean up listeners, timers, or temporary state before unmount.
+    // 功能：组件销毁前清理事件、计时器或临时状态。
     beforeUnmount: function () {
       document.removeEventListener('mousedown', this.onDocDown, true);
     },

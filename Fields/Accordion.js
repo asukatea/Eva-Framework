@@ -14,7 +14,7 @@
 (function () {
   window.EvaFields = window.EvaFields || {};
 
-  // Purpose: Copy object values before mutating model state.
+  // 功能：处理 Clone 相关逻辑。
   function Clone(value) {
     if (!value || typeof value !== 'object' || Array.isArray(value)) { return {}; }
     return Object.assign({}, value);
@@ -24,30 +24,30 @@
     props: ['field', 'modelValue'],
     emits: ['update:modelValue'],
     methods: {
-      // Purpose: Handle tv behavior.
+      // 功能：处理 tv 相关逻辑。
       tv: function (value) {
         return window.EvaI18n && window.EvaI18n.tv ? window.EvaI18n.tv(value) : (value || '');
       },
-      // Purpose: Handle sections behavior.
+      // 功能：处理 sections 相关逻辑。
       sections: function () {
         return Array.isArray(this.field.sections) ? this.field.sections : [];
       },
-      // Purpose: Handle section Id behavior.
+      // 功能：处理 section Id 相关逻辑。
       sectionId: function (section, index) {
         return String(section.id || section.key || index);
       },
-      // Purpose: Handle section Values behavior.
+      // 功能：处理 section Values 相关逻辑。
       sectionValues: function (section, index) {
         var all = Clone(this.modelValue);
         var id = this.sectionId(section, index);
         return all[id] && typeof all[id] === 'object' && !Array.isArray(all[id]) ? all[id] : {};
       },
-      // Purpose: Handle child Value behavior.
+      // 功能：处理 child Value 相关逻辑。
       childValue: function (section, index, child) {
         var values = this.sectionValues(section, index);
         return Object.prototype.hasOwnProperty.call(values, child.id) ? values[child.id] : (child.default !== undefined ? child.default : '');
       },
-      // Purpose: Update update Child state.
+      // 功能：更新 update Child 对应状态。
       updateChild: function (section, index, child, value) {
         var all = Clone(this.modelValue);
         var id = this.sectionId(section, index);
@@ -56,7 +56,7 @@
         all[id] = values;
         this.$emit('update:modelValue', all);
       },
-      // Purpose: Handle field Col behavior.
+      // 功能：处理 field Col 相关逻辑。
       fieldCol: function (field) {
         var map = {
           'full': 'eva-acc-col-12', '1': 'eva-acc-col-12', '1/1': 'eva-acc-col-12',

@@ -29,9 +29,9 @@
 
   // EvaFW.config 由 PHP 在后台页 / 独立页注入，集中提供 REST 地址、Nonce 等运行时配置。
   function Cfg() { return (window.EvaFW && window.EvaFW.config) || {}; }
-  // Purpose: Build the WordPress REST API base URL.
+  // 功能：处理 Rest Base 相关逻辑。
   function Rest_Base() { return (Cfg().restUrl || '/wp-json/').replace(/\/+$/, '') + '/'; }
-  // Purpose: Read the nonce used by REST requests.
+  // 功能：处理 Nonce 相关逻辑。
   function Nonce() { return Cfg().restNonce || Cfg().nonce || ''; }
 
   /**
@@ -80,9 +80,9 @@
 
   // 计划更新时间使用两个 eva-select（小时 / 分钟），这里生成 00-23 / 00-59 的选项表。
   function Pad_2(n) { return String(n).padStart(2, '0'); }
-  // Purpose: Build sequential option maps for select controls.
+  // 功能：处理 Range Map 相关逻辑。
   function Range_Map(max) { var m = {}; for (var i = 0; i < max; i++) { m[Pad_2(i)] = Pad_2(i); } return m; }
-  // Purpose: Split HH:mm text into hour and minute values.
+  // 功能：处理 Split Time 相关逻辑。
   function Split_Time(t) { var p = String(t || '03:00').split(':'); return { h: Pad_2((parseInt(p[0], 10) || 0)), m: Pad_2((parseInt(p[1], 10) || 0)) }; }
 
   // REST 与后端 option 使用英文枚举；UI 展示统一映射为中文。
@@ -174,11 +174,11 @@
     '  </div>' +
     '</div>';
 
-  // Purpose: Create the standalone update dashboard Vue app.
+  // 功能：处理 Create Update App 相关逻辑。
   function Create_Update_App(el) {
     var init = Parse_Data(el);
     var app = window.Vue.createApp({
-      // Purpose: Initialize component state and exposed reactive data.
+      // 功能：初始化组件响应式状态与对外数据。
       data: function () {
         var t = Split_Time(init.schedule.time);
         return {
@@ -214,11 +214,11 @@
         hasUpdate: function () {
           return this.cmp((this.d.latestVersion || '').replace(/^Version\s+/i, '').trim(), this.d.version) > 0;
         },
-        // Purpose: Handle shown Logs behavior.
+        // 功能：处理 shown Logs 相关逻辑。
         shownLogs: function () { return this.d.logs.slice(0, this.logLimit); },
-        // Purpose: Handle latest Log behavior.
+        // 功能：处理 latest Log 相关逻辑。
         latestLog: function () { return this.d.logs[0] || {}; },
-        // Purpose: Handle selected Log behavior.
+        // 功能：处理 selected Log 相关逻辑。
         selectedLog: function () { return this.d.logs[this.selectedLogIndex] || this.latestLog; },
         // tabs 轨道由左右按钮驱动，偏移量必须被实测的最大滚动距离限制，避免最右侧留空。
         tabOffset: function () {
@@ -234,16 +234,16 @@
           for (var i = 0; i < Math.max(pa.length, pb.length); i++) { var x = (pa[i] || 0) - (pb[i] || 0); if (x) { return x; } }
           return 0;
         },
-        // Purpose: Handle freq Label behavior.
+        // 功能：处理 freq Label 相关逻辑。
         freqLabel: function (f) {
           for (var i = 0; i < FREQ.length; i++) { if (FREQ[i][0] === f) { return FREQ[i][1]; } }
           return f || '每天';
         },
-        // Purpose: Handle prev Log behavior.
+        // 功能：处理 prev Log 相关逻辑。
         prevLog: function () {
           if (this.selectedLogIndex > 0) { this.selectedLogIndex--; }
         },
-        // Purpose: Handle next Log behavior.
+        // 功能：处理 next Log 相关逻辑。
         nextLog: function () {
           if (this.selectedLogIndex < this.d.logs.length - 1) { this.selectedLogIndex++; }
         },
@@ -266,7 +266,7 @@
             this.timeline = res.activities;
           }
         },
-        // Purpose: Update set Notice state.
+        // 功能：更新 set Notice 对应状态。
         setNotice: function (msg, type) {
           var self = this;
           this.notice = { msg: msg, type: type || 'info' };
@@ -311,7 +311,7 @@
           }, 1500);
         }
       },
-      // Purpose: Run component mount initialization.
+      // 功能：组件挂载后执行初始化和事件绑定。
       mounted: function () {
         var self = this;
         // tabs 轨道宽度依赖真实渲染后的 DOM，必须在 mount 后测量。
@@ -319,7 +319,7 @@
         this._resizeHandler = function () { self.updateTabMetrics(); };
         window.addEventListener('resize', this._resizeHandler);
       },
-      // Purpose: Clean up listeners, timers, or temporary state before unmount.
+      // 功能：组件销毁前清理事件、计时器或临时状态。
       beforeUnmount: function () {
         if (this._resizeHandler) {
           window.removeEventListener('resize', this._resizeHandler);
@@ -334,7 +334,7 @@
     return app;
   }
 
-  // Purpose: Wait for the callback mount node before mounting the update app.
+  // 功能：处理 Mount When Ready 相关逻辑。
   function Mount_When_Ready() {
     var tries = 0;
     var timer = setInterval(function () {

@@ -7,21 +7,21 @@
   if (typeof window === 'undefined') { return; }
   window.EvaUI = window.EvaUI || {};
 
-  // Purpose: Read the Eva runtime config injected by PHP.
+  // 功能：处理 Cfg 相关逻辑。
   function Cfg() { return (window.EvaFW && window.EvaFW.config) || {}; }
-  // Purpose: Build the WordPress REST API base URL.
+  // 功能：处理 Rest Base 相关逻辑。
   function Rest_Base() { return (Cfg().restUrl || '/wp-json/').replace(/\/+$/, '') + '/'; }
-  // Purpose: Detect whether a media item is an image.
+  // 功能：判断 Is Image 状态。
   function Is_Image(item) {
     var url = item && item.url ? String(item.url) : String(item || '');
     return /\.(png|jpe?g|gif|webp|svg)(\?|$)/i.test(url) || /^image\//i.test(item && item.mime ? item.mime : '');
   }
-  // Purpose: Extract a display filename from a URL.
+  // 功能：处理 File Name 相关逻辑。
   function File_Name(url) {
     url = String(url || '');
     return decodeURIComponent((url.split('/').pop() || '').split('?')[0] || 'media');
   }
-  // Purpose: Normalize a WordPress media REST item for eva-media.
+  // 功能：格式化 Format Media Item 的展示值。
   function Format_Media_Item(json) {
     var sizes = json.media_details && json.media_details.sizes ? json.media_details.sizes : {};
     var thumb = sizes.thumbnail && sizes.thumbnail.source_url ? sizes.thumbnail.source_url : '';
@@ -54,7 +54,7 @@
       showDrop: { type: Boolean, default: true }
     },
     emits: ['update:modelValue'],
-    // Purpose: Initialize component state and exposed reactive data.
+    // 功能：初始化组件响应式状态与对外数据。
     data: function () {
       return {
         drag: false,
@@ -71,12 +71,12 @@
       };
     },
     computed: {
-      // Purpose: Handle mode behavior.
+      // 功能：处理 mode 相关逻辑。
       mode: function () {
         var lib = this.library || this.mime || 'image';
         return lib === 'media' ? 'image' : lib;
       },
-      // Purpose: Handle items behavior.
+      // 功能：处理 items 相关逻辑。
       items: function () {
         var v = this.modelValue;
         if (!v) { return []; }
@@ -85,22 +85,22 @@
         }
         return [this.normalizeItem(v)].filter(Boolean);
       },
-      // Purpose: Handle accept behavior.
+      // 功能：处理 accept 相关逻辑。
       accept: function () {
         if (this.mode === 'image') { return 'image/png,image/jpeg,image/gif,image/webp,image/svg+xml'; }
         return '';
       },
-      // Purpose: Handle max Bytes behavior.
+      // 功能：处理 max Bytes 相关逻辑。
       maxBytes: function () {
         return Math.max(0, Number(this.maxSize || 0)) * 1024 * 1024;
       },
-      // Purpose: Handle selected Ids behavior.
+      // 功能：处理 selected Ids 相关逻辑。
       selectedIds: function () {
         return this.browserPicked.map(function (item) { return String(item.id || item.url); });
       }
     },
     methods: {
-      // Purpose: Normalize normalize Item data.
+      // 功能：归一化 normalize Item 数据结构。
       normalizeItem: function (value) {
         if (value && typeof value === 'object') {
           return {
@@ -120,14 +120,14 @@
         }
         return { id: '', url: String(value), title: File_Name(value), filename: File_Name(value), mime: '' };
       },
-      // Purpose: Handle serialize Item behavior.
+      // 功能：处理 serialize Item 相关逻辑。
       serializeItem: function (item) {
         var type = this.returnType || (this.multiple ? 'array' : 'url');
         if (type === 'id') { return item.id || ''; }
         if (type === 'array' || type === 'object') { return item; }
         return item.url || '';
       },
-      // Purpose: Handle emit Items behavior.
+      // 功能：处理 emit Items 相关逻辑。
       emitItems: function (items) {
         if (this.multiple) {
           this.$emit('update:modelValue', items.map(this.serializeItem));
@@ -135,19 +135,19 @@
         }
         this.$emit('update:modelValue', items.length ? this.serializeItem(items[0]) : '');
       },
-      // Purpose: Open open Library UI or state.
+      // 功能：打开 open Library 相关界面或状态。
       openLibrary: function () {
         this.browserOpen = true;
         this.browserPicked = this.items.slice();
         this.browserPage = 1;
         this.loadLibrary();
       },
-      // Purpose: Close close Library UI or state.
+      // 功能：关闭 close Library 相关界面或状态。
       closeLibrary: function () {
         this.browserOpen = false;
         this.browserError = '';
       },
-      // Purpose: Handle load Library behavior.
+      // 功能：加载 load Library 需要的数据或资源。
       loadLibrary: function () {
         var self = this;
         if (!window.fetch) {
@@ -178,24 +178,24 @@
           self.browserLoading = false;
         });
       },
-      // Purpose: Handle search Library behavior.
+      // 功能：处理 search Library 相关逻辑。
       searchLibrary: function () {
         this.browserPage = 1;
         this.loadLibrary();
       },
-      // Purpose: Update set Library Page state.
+      // 功能：更新 set Library Page 对应状态。
       setLibraryPage: function (page) {
         page = Math.min(this.browserTotalPages, Math.max(1, page));
         if (page === this.browserPage) { return; }
         this.browserPage = page;
         this.loadLibrary();
       },
-      // Purpose: Check is Picked state.
+      // 功能：判断 is Picked 状态。
       isPicked: function (item) {
         var key = String(item.id || item.url);
         return this.selectedIds.indexOf(key) !== -1;
       },
-      // Purpose: Toggle toggle Pick state.
+      // 功能：切换 toggle Pick 状态。
       togglePick: function (item) {
         var key = String(item.id || item.url);
         if (!this.multiple) {
@@ -207,26 +207,26 @@
         if (idx >= 0) { next.splice(idx, 1); } else { next.push(item); }
         this.browserPicked = next;
       },
-      // Purpose: Handle apply Library behavior.
+      // 功能：处理 apply Library 相关逻辑。
       applyLibrary: function () {
         this.emitItems(this.browserPicked);
         this.closeLibrary();
       },
-      // Purpose: Handle choose File behavior.
+      // 功能：处理 choose File 相关逻辑。
       chooseFile: function () {
         this.$refs.file && this.$refs.file.click();
       },
-      // Purpose: Handle on File Change behavior.
+      // 功能：处理 on File Change 相关逻辑。
       onFileChange: function (event) {
         this.uploadFiles(event.target.files);
         event.target.value = '';
       },
-      // Purpose: Handle on Drop behavior.
+      // 功能：处理 on Drop 相关逻辑。
       onDrop: function (event) {
         this.drag = false;
         this.uploadFiles(event.dataTransfer.files);
       },
-      // Purpose: Handle upload Files behavior.
+      // 功能：处理 upload Files 相关逻辑。
       uploadFiles: function (files) {
         var self = this;
         files = Array.prototype.slice.call(files || []);
@@ -253,7 +253,7 @@
             self.uploading = false;
           });
       },
-      // Purpose: Handle upload File behavior.
+      // 功能：处理 upload File 相关逻辑。
       uploadFile: function (file) {
         if (this.maxBytes && file.size > this.maxBytes) {
           return Promise.reject(new Error('文件大小超过限制：' + this.maxSize + 'MB'));
@@ -278,18 +278,18 @@
           });
         });
       },
-      // Purpose: Handle remove At behavior.
+      // 功能：移除 remove At 对应条目。
       removeAt: function (index) {
         var next = this.items.slice();
         next.splice(index, 1);
         this.emitItems(next);
       },
-      // Purpose: Handle replace At behavior.
+      // 功能：处理 replace At 相关逻辑。
       replaceAt: function (index) {
         this.removeAt(index);
         this.openLibrary();
       },
-      // Purpose: Handle meta Text behavior.
+      // 功能：处理 meta Text 相关逻辑。
       metaText: function (item) {
         var parts = [];
         if (item.width && item.height) { parts.push(item.width + ' x ' + item.height); }

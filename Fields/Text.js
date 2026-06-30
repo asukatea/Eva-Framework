@@ -16,7 +16,10 @@
     emits: ['update:modelValue'],
     template:
       '<input type="text" class="eva-f-input" :value="modelValue"' +
+      ' v-bind="field.attributes || {}"' +
       ' :placeholder="field.placeholder || \'\'"' +
+      ' :disabled="!!field.disabled"' +
+      ' :readonly="!!field.readonly"' +
       ' @input="$emit(\'update:modelValue\', $event.target.value)">'
   };
 })();

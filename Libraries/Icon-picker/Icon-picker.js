@@ -105,20 +105,21 @@
     direction: '方向',
     interface: '界面',
     media: '媒体',
-    brand: '品牌'
+    brand: '品牌',
+    iconfont: 'Iconfont'
   };
 
   var REMIX_CACHE = null;
   var REMIX_CSS = 'https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css';
 
-  // Purpose: Convert icon tuples into picker item objects.
+  // 功能：处理 To Items 相关逻辑。
   function To_Items(list) {
     return list.map(function (x) {
       return { value: x[0], label: x[1], cat: x[2] };
     });
   }
 
-  // Purpose: Normalize icon library aliases into internal keys.
+  // 功能：处理 Library Key 相关逻辑。
   function Library_Key(value) {
     value = String(value || '').toLowerCase();
     if (value === 'fontawesome' || value === 'font-awesome') { return 'fa'; }
@@ -128,7 +129,7 @@
     return value || 'remix';
   }
 
-  // Purpose: Infer a Remixicon category from its class name.
+  // 功能：处理 Remix Category 相关逻辑。
   function Remix_Category(value) {
     if (/ri-(arrow|skip|corner|expand|collapse|login|logout|drag|scroll|route)/.test(value)) { return 'direction'; }
     if (/ri-(image|gallery|camera|movie|video|music|volume|mic|play|pause|record|radio|dvd|disc|live|broadcast)/.test(value)) { return 'media'; }
@@ -137,12 +138,29 @@
     return 'interface';
   }
 
-  // Purpose: Create a readable label from an icon class name.
+  // 功能：处理 Label From Icon 相关逻辑。
   function Label_From_Icon(value) {
     return String(value || '').replace(/^ri-/, '').replace(/-(line|fill)$/, '').replace(/-/g, ' ');
   }
 
   window.EvaUI.IconPicker = {
+    components: {
+      EvaSymbolIcon: {
+        props: ['href'],
+        mounted: function () { this.syncHref(); },
+        updated: function () { this.syncHref(); },
+        methods: {
+          // 功能：以 DOM API 写入 SVG use 引用，兼容 href 与 xlink:href。
+          syncHref: function () {
+            var use = this.$el && this.$el.querySelector ? this.$el.querySelector('use') : null;
+            if (!use || !this.href) { return; }
+            use.setAttribute('href', this.href);
+            use.setAttributeNS('http://www.w3.org/1999/xlink', 'href', this.href);
+          }
+        },
+        template: '<svg class="eva-icon-svg" aria-hidden="true" focusable="false"><use></use></svg>'
+      }
+    },
     props: {
       modelValue: { type: String, default: '' },
       set: { type: String, default: '' },
@@ -151,7 +169,7 @@
       defaultValue: { type: String, default: '' }
     },
     emits: ['update:modelValue'],
-    // Purpose: Initialize component state and exposed reactive data.
+    // 功能：初始化组件响应式状态与对外数据。
     data: function () {
       return {
         open: false,
@@ -164,30 +182,36 @@
       };
     },
     computed: {
-      // Purpose: Handle lib behavior.
+      // 功能：处理 lib 相关逻辑。
       lib: function () {
         return Library_Key(this.library || this.set || 'remix');
       },
-      // Purpose: Handle items behavior.
+      // 功能：处理 items 相关逻辑。
       items: function () {
-        if (this.lib === 'fa') { return To_Items(FA_ITEMS); }
-        if (this.lib === 'dashicons') { return To_Items(DASH_ITEMS); }
         if (this.lib === 'svg') { return this.svgItems; }
-        return this.remixItems.length ? this.remixItems : To_Items(REMIX_ITEMS);
+        var base;
+        if (this.lib === 'fa') {
+          base = To_Items(FA_ITEMS);
+        } else if (this.lib === 'dashicons') {
+          base = To_Items(DASH_ITEMS);
+        } else {
+          base = this.remixItems.length ? this.remixItems : To_Items(REMIX_ITEMS);
+        }
+        return this.svgItems.length ? base.concat(this.svgItems) : base;
       },
-      // Purpose: Handle categories behavior.
+      // 功能：处理 categories 相关逻辑。
       categories: function () {
         var seen = { all: true };
         var out = [{ id: 'all', label: CAT_LABELS.all }];
         this.items.forEach(function (item) {
           if (!seen[item.cat]) {
             seen[item.cat] = true;
-            out.push({ id: item.cat, label: CAT_LABELS[item.cat] || item.cat });
+            out.push({ id: item.cat, label: CAT_LABELS[item.cat] || item.cat, separated: item.cat === 'iconfont' });
           }
         });
         return out;
       },
-      // Purpose: Handle visible Items behavior.
+      // 功能：处理 visible Items 相关逻辑。
       visibleItems: function () {
         var q = this.query.trim().toLowerCase();
         var cat = this.activeCat;
@@ -197,15 +221,15 @@
           return inCat && hit;
         });
       },
-      // Purpose: Handle display Value behavior.
+      // 功能：处理 display Value 相关逻辑。
       displayValue: function () {
         return this.modelValue || '';
       },
-      // Purpose: Handle preview Class behavior.
+      // 功能：处理 preview Class 相关逻辑。
       previewClass: function () {
         return this.iconClass(this.displayValue || this.defaultValue || this.draft);
       },
-      // Purpose: Handle draft Class behavior.
+      // 功能：处理 draft Class 相关逻辑。
       draftClass: function () {
         return this.iconClass(this.draft);
       }
@@ -213,12 +237,12 @@
     watch: {
       modelValue: {
         immediate: true,
-        // Purpose: React to watched value changes.
+        // 功能：响应监听值变化并同步组件状态。
         handler: function (value) {
           this.draft = this.normalizeValue(value || this.defaultValue || '');
         }
       },
-      // Purpose: Handle lib behavior.
+      // 功能：处理 lib 相关逻辑。
       lib: function () {
         this.activeCat = 'common';
         this.draft = this.normalizeValue(this.modelValue || this.defaultValue || '');
@@ -226,18 +250,20 @@
         if (this.lib === 'svg') { this.scanSvgSymbols(); }
       }
     },
-    // Purpose: Run component mount initialization.
+    // 功能：组件挂载后执行初始化和事件绑定。
     mounted: function () {
       document.addEventListener('mousedown', this.onDocumentDown, true);
+      window.addEventListener('eva:iconfont-loaded', this.onIconfontLoaded);
       if (this.lib === 'remix') { this.ensureRemixItems(); }
-      if (this.lib === 'svg') { this.scanSvgSymbols(); }
+      this.scanSvgSymbols();
     },
-    // Purpose: Clean up listeners, timers, or temporary state before unmount.
+    // 功能：组件销毁前清理事件、计时器或临时状态。
     beforeUnmount: function () {
       document.removeEventListener('mousedown', this.onDocumentDown, true);
+      window.removeEventListener('eva:iconfont-loaded', this.onIconfontLoaded);
     },
     methods: {
-      // Purpose: Normalize normalize Value data.
+      // 功能：归一化 normalize Value 数据结构。
       normalizeValue: function (value) {
         value = String(value || '').trim();
         if (this.lib === 'fa') {
@@ -251,7 +277,7 @@
         }
         return value;
       },
-      // Purpose: Handle icon Class behavior.
+      // 功能：处理 icon Class 相关逻辑。
       iconClass: function (value) {
         value = this.normalizeValue(value);
         if (!value) { return 'ri-star-line'; }
@@ -260,27 +286,34 @@
         if (this.lib === 'dashicons') { return 'dashicons dashicons-' + value; }
         return value.indexOf('ri-') === 0 ? value : ('ri-' + value);
       },
-      // Purpose: Check is Symbol state.
+      // 功能：判断 is Symbol 状态。
       isSymbol: function (value) {
         value = this.normalizeValue(value);
         return value.charAt(0) === '#';
       },
-      // Purpose: Handle symbol Href behavior.
+      // 功能：处理 symbol Href 相关逻辑。
       symbolHref: function (value) {
         return this.normalizeValue(value);
       },
-      // Purpose: Handle scan Svg Symbols behavior.
+      // 功能：处理 scan Svg Symbols 相关逻辑。
       scanSvgSymbols: function () {
         var nodes = document.querySelectorAll('symbol[id]');
         var out = [];
         for (var i = 0; i < nodes.length; i++) {
           var id = nodes[i].getAttribute('id');
           if (!id) { continue; }
-          out.push({ value: '#' + id, label: id.replace(/^icon-/, '').replace(/[-_]/g, ' '), cat: 'common' });
+          out.push({ value: '#' + id, label: id.replace(/^icon-/, '').replace(/[-_]/g, ' '), cat: 'iconfont' });
         }
         this.svgItems = out.sort(function (a, b) { return a.value.localeCompare(b.value); });
       },
-      // Purpose: Handle ensure Remix Items behavior.
+      // 功能：阿里 Iconfont Symbol 脚本加载后，刷新当前 SVG 图标库。
+      onIconfontLoaded: function () {
+        this.scanSvgSymbols();
+        if (this.open && this.svgItems.length) {
+          this.activeCat = 'iconfont';
+        }
+      },
+      // 功能：处理 ensure Remix Items 相关逻辑。
       ensureRemixItems: function () {
         var self = this;
         if (REMIX_CACHE && REMIX_CACHE.length) {
@@ -310,46 +343,46 @@
           .catch(function () {})
           .finally(function () { self.remixLoading = false; });
       },
-      // Purpose: Toggle toggle state.
+      // 功能：切换 toggle 状态。
       toggle: function () {
         this.open = !this.open;
         if (this.open) {
           this.draft = this.normalizeValue(this.modelValue || this.defaultValue || '');
           this.query = '';
           if (this.lib === 'remix') { this.ensureRemixItems(); }
-          if (this.lib === 'svg') { this.scanSvgSymbols(); }
+          this.scanSvgSymbols();
         }
       },
-      // Purpose: Close close UI or state.
+      // 功能：关闭 close 相关界面或状态。
       close: function () {
         this.open = false;
       },
-      // Purpose: Handle on Document Down behavior.
+      // 功能：处理 on Document Down 相关逻辑。
       onDocumentDown: function (event) {
         if (!this.open || !this.$el || this.$el.contains(event.target)) { return; }
         this.close();
       },
-      // Purpose: Update set Draft state.
+      // 功能：更新 set Draft 对应状态。
       setDraft: function (item) {
         this.draft = item.value;
       },
-      // Purpose: Handle commit Input behavior.
+      // 功能：处理 commit Input 相关逻辑。
       commitInput: function (event) {
         this.$emit('update:modelValue', this.normalizeValue(event.target.value));
       },
-      // Purpose: Handle clear behavior.
+      // 功能：清空 clear 相关状态。
       clear: function () {
         this.draft = '';
         this.$emit('update:modelValue', '');
         this.close();
       },
-      // Purpose: Handle reset behavior.
+      // 功能：重置 reset 相关状态。
       reset: function () {
         var value = this.normalizeValue(this.defaultValue || '');
         this.draft = value;
         this.$emit('update:modelValue', value);
       },
-      // Purpose: Handle apply behavior.
+      // 功能：处理 apply 相关逻辑。
       apply: function () {
         this.$emit('update:modelValue', this.normalizeValue(this.draft));
         this.close();
@@ -358,7 +391,7 @@
     template: [
       '<div class="eva-icon-picker" :class="{ \'is-open\': open }">',
       '  <div class="eva-icon-control">',
-      '    <span class="eva-icon-preview"><svg v-if="isSymbol(displayValue || defaultValue || draft)" class="eva-icon-svg"><use :xlink:href="symbolHref(displayValue || defaultValue || draft)"></use></svg><i v-else :class="previewClass"></i></span>',
+      '    <span class="eva-icon-preview"><eva-symbol-icon v-if="isSymbol(displayValue || defaultValue || draft)" :href="symbolHref(displayValue || defaultValue || draft)"></eva-symbol-icon><i v-else :class="previewClass"></i></span>',
       '    <input class="eva-icon-input" :placeholder="placeholder || \'请选择一个图标\'" :value="displayValue" @change="commitInput" @keydown.enter.prevent="$event.target.blur()">',
       '    <button type="button" class="eva-icon-open" :class="{ \'is-active\': open }" @click="toggle" aria-label="选择图标"><i class="ri-grid-line"></i></button>',
       '    <button type="button" class="eva-icon-reset" @click="reset" aria-label="恢复默认"><i class="ri-restart-line"></i></button>',
@@ -366,18 +399,18 @@
       '  <div v-show="open" class="eva-icon-popover">',
       '    <div class="eva-icon-search"><i class="ri-search-line"></i><input v-model="query" type="search" placeholder="搜索图标..."></div>',
       '    <div class="eva-icon-cats">',
-      '      <button v-for="cat in categories" :key="cat.id" type="button" :class="{ \'is-active\': activeCat === cat.id }" @click="activeCat = cat.id">{{ cat.label }}</button>',
+      '      <button v-for="cat in categories" :key="cat.id" type="button" :class="{ \'is-active\': activeCat === cat.id, \'has-separator\': cat.separated }" @click="activeCat = cat.id">{{ cat.label }}</button>',
       '    </div>',
       '    <div v-if="remixLoading" class="eva-icon-loading">正在加载 Remixicon 全量图标...</div>',
       '    <div class="eva-icon-grid">',
       '      <button v-for="item in visibleItems" :key="item.value" type="button" :class="{ \'is-selected\': draft === item.value }" :title="item.value" @click="setDraft(item)">',
-      '        <svg v-if="isSymbol(item.value)" class="eva-icon-svg"><use :xlink:href="symbolHref(item.value)"></use></svg><i v-else :class="iconClass(item.value)"></i>',
+      '        <eva-symbol-icon v-if="isSymbol(item.value)" :href="symbolHref(item.value)"></eva-symbol-icon><i v-else :class="iconClass(item.value)"></i>',
       '      </button>',
       '      <div v-if="!visibleItems.length" class="eva-icon-empty">{{ lib === \'svg\' ? \'未发现 SVG symbol，请先加载阿里 iconfont.js\' : \'没有匹配的图标\' }}</div>',
       '    </div>',
       '    <div class="eva-icon-actions">',
       '      <button type="button" class="eva-icon-btn" @click="clear">清除</button>',
-      '      <span class="eva-icon-current"><svg v-if="isSymbol(draft)" class="eva-icon-svg"><use :xlink:href="symbolHref(draft)"></use></svg><i v-else :class="draftClass"></i>{{ draft || \'未选择\' }}</span>',
+      '      <span class="eva-icon-current"><eva-symbol-icon v-if="isSymbol(draft)" :href="symbolHref(draft)"></eva-symbol-icon><i v-else :class="draftClass"></i><span class="eva-icon-current-text">{{ draft || \'未选择\' }}</span></span>',
       '      <button type="button" class="eva-icon-btn is-primary" @click="apply">应用</button>',
       '    </div>',
       '  </div>',

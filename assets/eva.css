@@ -153,6 +153,14 @@
   flex-direction: column;
   gap: 2px;
   overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.eva-sb-menu::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
 }
 
 .eva-sb-item {
@@ -1455,6 +1463,12 @@ body.eva-fullscreen #wpbody-content {
   padding: 9px 0;
 }
 
+.eva-set-row--stack {
+  align-items: stretch;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .eva-set-label {
   display: flex;
   align-items: center;
@@ -1466,6 +1480,132 @@ body.eva-fullscreen #wpbody-content {
 .eva-set-label i {
   color: var(--eva-text-sub);
   font-size: 16px;
+}
+
+.eva-set-input-row {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.eva-iconfont-tabs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-color: color-mix(in srgb, var(--eva-primary) 34%, transparent) transparent;
+  scrollbar-width: thin;
+}
+
+.eva-iconfont-tabs::-webkit-scrollbar {
+  height: 5px;
+}
+
+.eva-iconfont-tabs::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.eva-iconfont-tabs::-webkit-scrollbar-thumb {
+  border-radius: var(--eva-radius-full);
+  background: color-mix(in srgb, var(--eva-primary) 24%, transparent);
+}
+
+.eva-iconfont-tab,
+.eva-iconfont-add {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  border: 1px solid var(--eva-border);
+  border-radius: var(--eva-radius);
+  background: var(--eva-soft);
+  color: var(--eva-text-sub);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  transition: border-color var(--eva-ease), background var(--eva-ease), color var(--eva-ease), box-shadow var(--eva-ease);
+}
+
+.eva-iconfont-tab {
+  gap: 5px;
+  padding: 0 8px;
+}
+
+.eva-iconfont-tab.is-active {
+  border-color: var(--eva-primary);
+  background: color-mix(in srgb, var(--eva-primary) 12%, var(--eva-surface));
+  color: var(--eva-primary);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--eva-primary) 10%, transparent);
+}
+
+.eva-iconfont-add {
+  width: 28px;
+  color: var(--eva-primary);
+}
+
+.eva-iconfont-remove {
+  margin-left: 2px;
+  color: var(--eva-text-mute);
+  font-size: 13px;
+}
+
+.eva-iconfont-remove:hover {
+  color: var(--eva-danger);
+}
+
+.eva-set-input {
+  flex: 1;
+  min-width: 0;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--eva-border);
+  border-radius: var(--eva-radius);
+  outline: none;
+  background: var(--eva-soft);
+  color: var(--eva-text);
+  font-size: 12.5px;
+  transition: border-color var(--eva-ease), box-shadow var(--eva-ease), background var(--eva-ease);
+}
+
+.eva-set-input:focus {
+  border-color: var(--eva-primary);
+  background: var(--eva-surface);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--eva-primary) 14%, transparent);
+}
+
+.eva-set-textarea {
+  height: 58px;
+  min-height: 58px;
+  padding: 8px 10px;
+  resize: vertical;
+  line-height: 1.45;
+}
+
+.eva-set-mini-btn {
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--eva-primary);
+  border-radius: var(--eva-radius);
+  background: var(--eva-primary);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter var(--eva-ease), transform var(--eva-ease);
+}
+
+.eva-set-mini-btn:hover {
+  filter: brightness(1.04);
+  transform: translateY(-1px);
+}
+
+.eva-set-hint {
+  margin: -2px 0 0;
+  color: var(--eva-text-sub);
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 /* 开关 */
@@ -2314,6 +2454,115 @@ body.eva-fullscreen #wpbody-content {
   min-width: 0;
 }
 
+/* 字段依赖：显示 / 隐藏时由 GSAP 驱动，CSS 负责移动与兜底动画。 */
+.eva-dependency-move {
+  transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.eva-dependency-leave-active {
+  pointer-events: none;
+}
+
+.eva-dependency-css-enter,
+.eva-dependency-css-leave {
+  transition: opacity 0.24s ease, transform 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.eva-dependency-css-enter {
+  opacity: 0;
+  transform: translateY(-8px) scale(0.985);
+}
+
+.eva-dependency-css-enter.is-active {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.eva-dependency-css-leave {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.eva-dependency-css-leave.is-active {
+  opacity: 0;
+  transform: translateY(-6px) scale(0.985);
+}
+
+/* 字段依赖：状态展示集中在标题，控件本身尽量保持原样。 */
+.eva-field-row.is-dependency-muted,
+.eva-field-row.is-dependency-disabled,
+.eva-field-row.is-dependency-readonly {
+  transition: opacity var(--eva-ease);
+}
+
+.eva-field-row.is-dependency-muted {
+  opacity: 0.82;
+}
+
+.eva-field-row.is-dependency-disabled {
+  opacity: 0.68;
+  cursor: not-allowed;
+}
+
+.eva-field-row.is-dependency-readonly {
+  opacity: 0.9;
+}
+
+.eva-field-row.is-dependency-muted .eva-field-title::after,
+.eva-field-row.is-dependency-disabled .eva-field-title::after,
+.eva-field-row.is-dependency-readonly .eva-field-title::after {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 8px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 11px;
+  line-height: 1.5;
+  font-weight: 500;
+  vertical-align: 1px;
+}
+
+.eva-field-row.is-dependency-muted .eva-field-title::after {
+  content: "依赖未满足";
+  color: #b45309;
+  background: color-mix(in srgb, #f59e0b 12%, transparent);
+}
+
+.eva-field-row.is-dependency-disabled .eva-field-title::after {
+  content: "已禁用";
+  color: var(--eva-text-sub);
+  background: color-mix(in srgb, var(--eva-text-sub) 10%, transparent);
+}
+
+.eva-field-row.is-dependency-readonly .eva-field-title::after {
+  content: "只读";
+  color: #2563eb;
+  background: color-mix(in srgb, #3b82f6 10%, transparent);
+}
+
+.eva-field-row.is-dependency-muted .eva-field-control,
+.eva-field-row.is-dependency-disabled .eva-field-control,
+.eva-field-row.is-dependency-readonly .eva-field-control {
+  position: relative;
+  border-radius: 10px;
+}
+
+.eva-field-row.is-dependency-muted .eva-field-control::after,
+.eva-field-row.is-dependency-disabled .eva-field-control::after,
+.eva-field-row.is-dependency-readonly .eva-field-control::after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  z-index: 2;
+  border-radius: 10px;
+  background: transparent;
+  pointer-events: auto;
+}
+
+.eva-field-row.is-dependency-disabled .eva-field-control::after {
+  cursor: not-allowed;
+}
+
 .eva-field-meta {
   display: flex;
   flex-direction: column;
@@ -2321,9 +2570,55 @@ body.eva-fullscreen #wpbody-content {
 }
 
 .eva-field-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-size: 13.5px;
   font-weight: 500;
   color: var(--eva-text);
+}
+
+.eva-field-help {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: var(--eva-soft);
+  color: var(--eva-text-sub);
+  font-size: 12px;
+  cursor: help;
+}
+
+.eva-field-help em {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  z-index: 5;
+  display: none;
+  width: max-content;
+  max-width: 240px;
+  padding: 7px 9px;
+  border-radius: 8px;
+  background: rgba(17, 24, 39, 0.94);
+  color: #fff;
+  font-style: normal;
+  font-size: 12px;
+  line-height: 1.45;
+  transform: translateX(-50%);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.18);
+}
+
+.eva-field-help:hover em,
+.eva-field-help:focus em {
+  display: block;
+}
+
+.eva-field-subtitle {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--eva-text-sub);
 }
 
 .eva-field-desc {
@@ -2334,6 +2629,57 @@ body.eva-fullscreen #wpbody-content {
 
 .eva-field-control {
   min-width: 0;
+}
+
+.eva-field-before,
+.eva-field-after,
+.eva-field-content {
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--eva-text-sub);
+}
+
+.eva-field-before p,
+.eva-field-after p,
+.eva-field-content p {
+  margin: 0;
+}
+
+.eva-field-content {
+  padding: 10px 12px;
+  border: 1px solid var(--eva-border);
+  border-radius: 10px;
+  background: var(--eva-soft);
+}
+
+.eva-field-row.has-error .eva-f-input,
+.eva-field-row.has-error .eva-select-trigger,
+.eva-field-row.has-error .eva-ajax-trigger {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.10);
+}
+
+.eva-field-error {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  width: fit-content;
+  max-width: 100%;
+  padding: 4px 8px;
+  border-radius: 8px;
+  background: rgba(239, 68, 68, 0.08);
+  color: #dc2626;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.eva-field-error i {
+  flex: none;
+  font-size: 14px;
+}
+
+.eva-demo-param-highlight .eva-field-title {
+  color: var(--eva-primary);
 }
 
 /* 整页型字段页（backup / html）：去掉表单内边距与外层卡片包裹，让内容铺满（.eva-admin 前缀以压过移动端规则） */
@@ -3371,6 +3717,11 @@ body.eva-fullscreen #wpbody-content {
 
 .eva-f-switch.is-on .eva-f-switch-dot {
   transform: translateX(18px);
+}
+
+.eva-f-switch:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 
 /* 脏状态保存坞（有未保存更改才出现）：表单底部静态条，右对齐，保存 + 恢复默认 */

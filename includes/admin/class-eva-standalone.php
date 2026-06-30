@@ -167,6 +167,7 @@ class Standalone
         nocache_headers();
 
         // 组装注入前端的数据（与后台 enqueue 注入结构一致，便于复用同一前端外壳）。
+        $sections = \Eva::prepare_sections($opt['sections']);
         $data = [
             'version'    => EVA_FW_VERSION,
             'adminUrl'   => admin_url(),
@@ -177,8 +178,9 @@ class Standalone
                 'title'    => $opt['menu_title'],
                 'subtitle' => $opt['subtitle'],
                 'menu'     => array_values($opt['menu']),
-                'sections' => \Eva::prepare_sections($opt['sections']),
+                'sections' => $sections,
                 'optionId' => $opt['option_id'],
+                'dependencySources' => Admin\Dependency::dependency_sources($sections),
                 'values'   => \Eva::get_values($opt['option_id']),
             ], \Eva::runtime()),
         ];

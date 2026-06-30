@@ -8,25 +8,25 @@
   if (typeof window === 'undefined') { return; }
   window.EvaUI = window.EvaUI || {};
 
-  // Purpose: Clamp a number to a min/max range.
+  // 功能：处理 Clamp 相关逻辑。
   function Clamp(n, min, max) {
     n = Number(n);
     if (Number.isNaN(n)) { n = min; }
     return Math.min(max, Math.max(min, n));
   }
 
-  // Purpose: Format an RGB channel as two hex digits.
+  // 功能：处理 Pad Hex 相关逻辑。
   function Pad_Hex(n) {
     var s = Clamp(Math.round(n), 0, 255).toString(16).toUpperCase();
     return s.length === 1 ? '0' + s : s;
   }
 
-  // Purpose: Convert RGB values into a HEX color string.
+  // 功能：处理 Rgb To Hex 相关逻辑。
   function Rgb_To_Hex(rgb) {
     return '#' + Pad_Hex(rgb.r) + Pad_Hex(rgb.g) + Pad_Hex(rgb.b);
   }
 
-  // Purpose: Parse a HEX color string into RGB values.
+  // 功能：处理 Hex To Rgb 相关逻辑。
   function Hex_To_Rgb(hex) {
     var v = String(hex || '').trim().replace(/^#/, '');
     if (v.length === 3) {
@@ -40,7 +40,7 @@
     };
   }
 
-  // Purpose: Convert RGB values into HSV picker coordinates.
+  // 功能：处理 Rgb To Hsv 相关逻辑。
   function Rgb_To_Hsv(rgb) {
     var r = Clamp(rgb.r, 0, 255) / 255;
     var g = Clamp(rgb.g, 0, 255) / 255;
@@ -63,7 +63,7 @@
     return { h: h, s: max === 0 ? 0 : d / max, v: max };
   }
 
-  // Purpose: Convert HSV picker coordinates back into RGB values.
+  // 功能：处理 Hsv To Rgb 相关逻辑。
   function Hsv_To_Rgb(h, s, v) {
     h = ((Clamp(h, 0, 360) % 360) + 360) % 360;
     s = Clamp(s, 0, 1);
@@ -87,7 +87,7 @@
     };
   }
 
-  // Purpose: Parse HEX or RGBA text into color picker state.
+  // 功能：处理 Parse Color 相关逻辑。
   function Parse_Color(value) {
     var raw = String(value || '').trim();
     var rgb = null;
@@ -109,7 +109,7 @@
     return { h: hsv.h, s: hsv.s, v: hsv.v, a: alpha, format: format };
   }
 
-  // Purpose: Format alpha values without redundant trailing zeros.
+  // 功能：处理 Alpha Text 相关逻辑。
   function Alpha_Text(a) {
     return String(Math.round(Clamp(a, 0, 1) * 1000) / 1000).replace(/0+$/, '').replace(/\.$/, '');
   }
@@ -140,7 +140,7 @@
       presetShape: { type: String, default: 'square' }
     },
     emits: ['update:modelValue'],
-    // Purpose: Initialize component state and exposed reactive data.
+    // 功能：初始化组件响应式状态与对外数据。
     data: function () {
       return {
         open: false,
@@ -154,54 +154,54 @@
       };
     },
     computed: {
-      // Purpose: Handle rgb behavior.
+      // 功能：处理 rgb 相关逻辑。
       rgb: function () {
         return Hsv_To_Rgb(this.h, this.s, this.v);
       },
-      // Purpose: Handle draft Text behavior.
+      // 功能：处理 draft Text 相关逻辑。
       draftText: function () {
         if (this.format === 'rgba') {
           return 'rgba(' + this.rgb.r + ', ' + this.rgb.g + ', ' + this.rgb.b + ', ' + Alpha_Text(this.a) + ')';
         }
         return Rgb_To_Hex(this.rgb);
       },
-      // Purpose: Handle swatch Style behavior.
+      // 功能：处理 swatch Style 相关逻辑。
       swatchStyle: function () {
         var value = this.modelValue || this.defaultValue || this.draftText;
         return { background: value || 'transparent' };
       },
-      // Purpose: Handle panel Style behavior.
+      // 功能：处理 panel Style 相关逻辑。
       panelStyle: function () {
         return { background: 'hsl(' + Math.round(this.h) + ', 100%, 50%)' };
       },
-      // Purpose: Handle sat Pointer Style behavior.
+      // 功能：处理 sat Pointer Style 相关逻辑。
       satPointerStyle: function () {
         return { left: (this.s * 100) + '%', top: ((1 - this.v) * 100) + '%' };
       },
-      // Purpose: Handle hue Pointer Style behavior.
+      // 功能：处理 hue Pointer Style 相关逻辑。
       huePointerStyle: function () {
         return { left: (this.h / 360 * 100) + '%' };
       },
-      // Purpose: Handle alpha Pointer Style behavior.
+      // 功能：处理 alpha Pointer Style 相关逻辑。
       alphaPointerStyle: function () {
         return { left: (this.a * 100) + '%' };
       },
-      // Purpose: Handle alpha Track Style behavior.
+      // 功能：处理 alpha Track Style 相关逻辑。
       alphaTrackStyle: function () {
         var rgb = this.rgb;
         return {
           background: 'linear-gradient(90deg, rgba(' + rgb.r + ', ' + rgb.g + ', ' + rgb.b + ', 0), rgba(' + rgb.r + ', ' + rgb.g + ', ' + rgb.b + ', 1))'
         };
       },
-      // Purpose: Check is Inline state.
+      // 功能：判断 is Inline 状态。
       isInline: function () {
         return this.mode === 'inline';
       },
-      // Purpose: Handle panel Open behavior.
+      // 功能：处理 panel Open 相关逻辑。
       panelOpen: function () {
         return this.isInline || this.open;
       },
-      // Purpose: Handle color Class behavior.
+      // 功能：处理 color Class 相关逻辑。
       colorClass: function () {
         var size = ['small', 'medium', 'large'].indexOf(this.size) !== -1 ? this.size : 'medium';
         var shape = this.presetShape === 'circle' ? 'circle' : 'square';
@@ -214,7 +214,7 @@
           'has-circle-presets': shape === 'circle'
         };
       },
-      // Purpose: Handle style Vars behavior.
+      // 功能：处理 style Vars 相关逻辑。
       styleVars: function () {
         var out = {};
         if (this.popoverWidth) {
@@ -225,7 +225,7 @@
         }
         return out;
       },
-      // Purpose: Handle allowed Formats behavior.
+      // 功能：处理 allowed Formats 相关逻辑。
       allowedFormats: function () {
         var raw = this.formats && this.formats.length ? this.formats : [this.defaultFormat || 'hex', 'rgba'];
         var out = [];
@@ -237,17 +237,17 @@
         if (!out.length) { out.push('hex'); }
         return out.filter(function (item, index) { return out.indexOf(item) === index; });
       },
-      // Purpose: Format format Options for display.
+      // 功能：格式化 format Options 的展示值。
       formatOptions: function () {
         var out = {};
         this.allowedFormats.forEach(function (item) { out[item] = item.toUpperCase(); });
         return out;
       },
-      // Purpose: Check can Select Format state.
+      // 功能：判断 can Select Format 状态。
       canSelectFormat: function () {
         return this.showFormat && this.allowedFormats.length > 1;
       },
-      // Purpose: Normalize normalized Presets data.
+      // 功能：归一化 normalized Presets 数据结构。
       normalizedPresets: function () {
         var fallback = ['#FF4D7F', '#EF4444', '#F97316', '#FACC15', '#22C55E', '#38BDF8', '#3B82F6', '#8B5CF6', '#64748B'];
         return (this.presets && this.presets.length ? this.presets : fallback).filter(function (c) {
@@ -258,39 +258,39 @@
     watch: {
       modelValue: {
         immediate: true,
-        // Purpose: React to watched value changes.
+        // 功能：响应监听值变化并同步组件状态。
         handler: function (value) {
           this.inputText = value || '';
           this.syncDraft(value || this.defaultValue);
         }
       },
-      // Purpose: Handle alpha behavior.
+      // 功能：处理 alpha 相关逻辑。
       alpha: function (enabled) {
         if (!enabled && this.format === 'rgba') {
           this.format = 'hex';
           this.a = 1;
         }
       },
-      // Purpose: Handle allowed Formats behavior.
+      // 功能：处理 allowed Formats 相关逻辑。
       allowedFormats: function () {
         if (this.allowedFormats.indexOf(this.format) === -1) {
           this.format = this.allowedFormats[0] || 'hex';
         }
       }
     },
-    // Purpose: Run component mount initialization.
+    // 功能：组件挂载后执行初始化和事件绑定。
     mounted: function () {
       document.addEventListener('mousedown', this.onDocumentDown, true);
       document.addEventListener('touchstart', this.onDocumentDown, true);
     },
-    // Purpose: Clean up listeners, timers, or temporary state before unmount.
+    // 功能：组件销毁前清理事件、计时器或临时状态。
     beforeUnmount: function () {
       this.stopDrag();
       document.removeEventListener('mousedown', this.onDocumentDown, true);
       document.removeEventListener('touchstart', this.onDocumentDown, true);
     },
     methods: {
-      // Purpose: Handle sync Draft behavior.
+      // 功能：处理 sync Draft 相关逻辑。
       syncDraft: function (value) {
         var parsed = Parse_Color(value);
         if (!parsed) {
@@ -304,22 +304,22 @@
         this.a = this.alpha ? parsed.a : 1;
         this.format = this.allowedFormats.indexOf(parsed.format) !== -1 ? parsed.format : (this.allowedFormats[0] || 'hex');
       },
-      // Purpose: Toggle toggle state.
+      // 功能：切换 toggle 状态。
       toggle: function () {
         if (this.disabled || this.isInline) { return; }
         this.open = !this.open;
         if (this.open) { this.syncDraft(this.modelValue || this.defaultValue); }
       },
-      // Purpose: Close close UI or state.
+      // 功能：关闭 close 相关界面或状态。
       close: function () {
         this.open = false;
       },
-      // Purpose: Handle on Document Down behavior.
+      // 功能：处理 on Document Down 相关逻辑。
       onDocumentDown: function (event) {
         if (this.isInline || !this.open || !this.$el || this.$el.contains(event.target)) { return; }
         this.close();
       },
-      // Purpose: Handle commit Text behavior.
+      // 功能：处理 commit Text 相关逻辑。
       commitText: function () {
         if (this.disabled) { return; }
         var parsed = Parse_Color(this.inputText);
@@ -330,7 +330,7 @@
         this.syncDraft(this.inputText);
         this.apply();
       },
-      // Purpose: Handle reset behavior.
+      // 功能：重置 reset 相关状态。
       reset: function () {
         if (this.disabled) { return; }
         var value = this.defaultValue || '';
@@ -338,14 +338,14 @@
         this.inputText = value;
         this.syncDraft(value);
       },
-      // Purpose: Handle clear behavior.
+      // 功能：清空 clear 相关状态。
       clear: function () {
         if (this.disabled) { return; }
         this.$emit('update:modelValue', '');
         this.inputText = '';
         if (!this.isInline) { this.close(); }
       },
-      // Purpose: Handle apply behavior.
+      // 功能：处理 apply 相关逻辑。
       apply: function () {
         if (this.disabled) { return; }
         var value = this.draftText;
@@ -353,17 +353,17 @@
         this.inputText = value;
         if (!this.isInline) { this.close(); }
       },
-      // Purpose: Update set Format Value state.
+      // 功能：更新 set Format Value 对应状态。
       setFormatValue: function (value) {
         if (this.disabled) { return; }
         this.format = this.allowedFormats.indexOf(value) !== -1 ? value : (this.allowedFormats[0] || 'hex');
       },
-      // Purpose: Update set Preset state.
+      // 功能：更新 set Preset 对应状态。
       setPreset: function (color) {
         if (this.disabled) { return; }
         this.syncDraft(color);
       },
-      // Purpose: Handle point behavior.
+      // 功能：处理 point 相关逻辑。
       point: function (event, el) {
         var e = event.touches && event.touches.length ? event.touches[0] : event;
         var rect = el.getBoundingClientRect();
@@ -372,24 +372,24 @@
           y: Clamp((e.clientY - rect.top) / rect.height, 0, 1)
         };
       },
-      // Purpose: Update set Sv state.
+      // 功能：更新 set Sv 对应状态。
       setSv: function (event) {
         var p = this.point(event, event.currentTarget || this.dragging.el);
         this.s = p.x;
         this.v = 1 - p.y;
       },
-      // Purpose: Update set Hue state.
+      // 功能：更新 set Hue 对应状态。
       setHue: function (event) {
         var p = this.point(event, event.currentTarget || this.dragging.el);
         this.h = p.x * 360;
       },
-      // Purpose: Update set Alpha state.
+      // 功能：更新 set Alpha 对应状态。
       setAlpha: function (event) {
         if (!this.alpha) { return; }
         var p = this.point(event, event.currentTarget || this.dragging.el);
         this.a = p.x;
       },
-      // Purpose: Handle start Drag behavior.
+      // 功能：处理 start Drag 相关逻辑。
       startDrag: function (event, kind) {
         if (this.disabled) { return; }
         event.preventDefault();
@@ -408,24 +408,24 @@
         document.addEventListener('touchend', up);
         move(event);
       },
-      // Purpose: Update set Sv With El state.
+      // 功能：更新 set Sv With El 对应状态。
       setSvWithEl: function (event, el) {
         var p = this.point(event, el);
         this.s = p.x;
         this.v = 1 - p.y;
       },
-      // Purpose: Update set Hue With El state.
+      // 功能：更新 set Hue With El 对应状态。
       setHueWithEl: function (event, el) {
         var p = this.point(event, el);
         this.h = p.x * 360;
       },
-      // Purpose: Update set Alpha With El state.
+      // 功能：更新 set Alpha With El 对应状态。
       setAlphaWithEl: function (event, el) {
         if (!this.alpha) { return; }
         var p = this.point(event, el);
         this.a = p.x;
       },
-      // Purpose: Handle stop Drag behavior.
+      // 功能：处理 stop Drag 相关逻辑。
       stopDrag: function () {
         if (!this.dragging) { return; }
         document.removeEventListener('mousemove', this.dragging.move);

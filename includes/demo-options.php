@@ -211,11 +211,16 @@ if (! function_exists('eva_demo_image_select_options')) {
 \Eva::addMenuItem('eva_demo', ['id' => 'general', 'label' => '常规设置', 'icon' => 'ri-equalizer-line']);
 \Eva::addMenuItem('eva_demo', ['id' => 'demo-feature', 'label' => '示例功能', 'icon' => 'ri-flashlight-line']);
 \Eva::addMenuItem('eva_demo', ['id' => 'fields', 'label' => '字段展示', 'icon' => 'ri-input-method-line', 'children' => [
+    ['id' => 'field-params', 'label' => '字段参数', 'icon' => 'ri-settings-5-line'],
     ['id' => 'field-image-select', 'label' => '图像选择', 'icon' => 'ri-image-line'],
     ['id' => 'field-color', 'label' => '颜色选择', 'icon' => 'ri-palette-line'],
     ['id' => 'field-color-group', 'label' => '颜色组', 'icon' => 'ri-color-filter-line'],
     ['id' => 'field-upload', 'label' => '媒体上传', 'icon' => 'ri-folder-image-line'],
     ['id' => 'field-select', 'label' => '下拉菜单', 'icon' => 'ri-list-check'],
+    ['id' => 'field-icon', 'label' => '图标选择', 'icon' => 'ri-star-line'],
+    ['id' => 'field-accordion', 'label' => '手风琴折叠', 'icon' => 'ri-menu-fold-line'],
+    ['id' => 'field-builder', 'label' => '页面构建器', 'icon' => 'ri-layout-masonry-line'],
+    ['id' => 'field-dependency', 'label' => '字段依赖', 'icon' => 'ri-git-branch-line'],
 ]]);
 \Eva::addMenuItem('eva_demo', ['id' => 'module', 'label' => '容器设置', 'icon' => 'ri-layout-2-line', 'children' => [
     ['id' => 'mod-top', 'label' => '顶部模块', 'icon' => 'ri-layout-top-line'],
@@ -290,6 +295,114 @@ if (! function_exists('eva_demo_image_select_options')) {
             '华南' => ['gz' => '广州', 'sz' => '深圳', 'xm' => '厦门'],
         ]],
         ['id' => 'about_text', 'type' => 'textarea', 'title' => '关于我们', 'desc' => '支持多行文本', 'default' => '', 'width' => 'full'],
+    ],
+]);
+
+// 字段展示：字段参数体系与字段级 validate。
+\Eva::createSection('eva_demo', [
+    'id'     => 'field-params',
+    'title'  => '字段参数',
+    'icon'   => 'ri-settings-5-line',
+    'fields' => [
+        ['id' => 'params_overview', 'type' => 'html', 'title' => '参数总览', 'width' => 'full', 'html' => '<div class="eva-html-note">字段参数不是全部通用：一部分作用在字段行上，所有字段可用；一部分作用在具体输入控件上，只适合 text / textarea / select 等；还有一部分是字段类型专属参数，例如 upload 的 button_title、color 的 alpha。</div>'],
+
+        ['id' => 'params_group_common', 'type' => 'html', 'title' => '字段行通用参数', 'width' => 'full', 'html' => '<div class="eva-html-note"><strong>通用：</strong>title、subtitle、desc、help、before、after、content、class 由字段外层统一渲染，和字段类型无关。</div>'],
+        ['id' => 'params_title_help', 'type' => 'textarea', 'title' => 'textarea：subtitle / desc / help', 'subtitle' => 'subtitle 显示在标题和描述之间。', 'desc' => 'desc 用于更长的字段说明；标题旁问号来自 help。', 'help' => 'help 是通用参数，所有字段行都能显示。', 'default' => '这里用 textarea 展示标题说明类参数。', 'placeholder' => '请输入多行内容', 'width' => '1/2'],
+        ['id' => 'params_before_after', 'type' => 'color', 'title' => 'color：before / after', 'before' => '<p>before：这段内容显示在颜色选择器之前。</p>', 'after' => '<p>after：这段内容显示在颜色选择器之后。</p>', 'help' => 'before/after 不是 text 专属，字段行都会渲染。', 'default' => '#7C3AED', 'alpha' => true, 'width' => '1/2'],
+        ['id' => 'params_content', 'type' => 'upload', 'title' => 'upload：content / button_title / preview', 'content' => '<strong>content：</strong>这块说明显示在媒体上传控件之前。', 'subtitle' => '这里用 upload 字段展示辅助内容和字段特有参数。', 'button_title' => '选择示例图片', 'preview' => true, 'library' => 'image', 'return_type' => 'url', 'width' => 'full'],
+
+        ['id' => 'params_group_input', 'type' => 'html', 'title' => '输入控件参数', 'width' => 'full', 'html' => '<div class="eva-html-note"><strong>非全局：</strong>placeholder、attributes、readonly、disabled 需要字段组件自己支持。它们最适合 text / textarea 这类原生输入；其它字段要逐个组件适配。</div>'],
+        ['id' => 'params_attributes', 'type' => 'text', 'title' => 'text：attributes', 'subtitle' => 'attributes 是输入元素属性，更适合 text / textarea 这类原生输入。', 'desc' => '此示例限制 maxlength=12，并追加 data-demo 属性。', 'default' => '最多12字', 'width' => '1/2', 'attributes' => [
+            'maxlength' => 12,
+            'data-demo' => 'field-attributes',
+            'autocomplete' => 'off',
+        ]],
+        ['id' => 'params_custom_class', 'type' => 'switcher', 'title' => 'switcher：class / help', 'subtitle' => '给字段行追加自定义 CSS class。', 'desc' => '此字段带 eva-demo-param-highlight class，可由主题或插件追加样式。', 'help' => 'class 是字段行参数，不依赖具体字段组件。', 'default' => true, 'width' => '1/2', 'class' => 'eva-demo-param-highlight'],
+        ['id' => 'params_readonly', 'type' => 'textarea', 'title' => 'textarea：readonly', 'subtitle' => '字段可显示但不可编辑。', 'default' => '这段 textarea 是只读内容。', 'width' => '1/2', 'readonly' => true],
+        ['id' => 'params_disabled', 'type' => 'switcher', 'title' => 'switcher：disabled', 'subtitle' => '字段禁用后不可点击。', 'default' => true, 'width' => '1/2', 'disabled' => true],
+
+        ['id' => 'params_group_type', 'type' => 'html', 'title' => '字段类型专属参数', 'width' => 'full', 'html' => '<div class="eva-html-note"><strong>按字段类型生效：</strong>select 的 multiple / sortable / searchable，color 的 output / alpha，upload 的 button_title / preview / library 等，不应该理解为所有字段通用。</div>'],
+        ['id' => 'params_select_enhanced', 'type' => 'select', 'title' => 'select 增强参数', 'subtitle' => 'multiple / sortable / searchable。', 'default' => ['header', 'footer'], 'width' => 'full', 'multiple' => true, 'sortable' => true, 'searchable' => true, 'options' => [
+            'header' => '头部模块',
+            'hero'   => '首屏模块',
+            'main'   => '主体模块',
+            'footer' => '底部模块',
+        ]],
+        ['id' => 'params_output_color', 'type' => 'color', 'title' => 'output / output_mode', 'subtitle' => '保存后会在前台 wp_head 输出 CSS。', 'desc' => 'output=.eva-output-demo-preview，output_mode=background-color。', 'default' => '#FF758C', 'alpha' => false, 'width' => '1/2', 'output' => '.eva-output-demo-preview', 'output_mode' => 'background-color'],
+        ['id' => 'params_output_note', 'type' => 'html', 'title' => 'output 说明', 'width' => '1/2', 'html' => '<div class="eva-html-note eva-output-demo-preview" style="padding:12px;border-radius:10px;color:#fff;">保存颜色后，前台同名选择器会自动获得背景色。后台这里仅作为说明块。</div>'],
+
+        ['id' => 'params_group_save', 'type' => 'html', 'title' => '保存处理参数', 'width' => 'full', 'html' => '<div class="eva-html-note"><strong>保存链路：</strong>validate 负责保存前拦截错误，sanitize 负责入库前格式化。它们不是 text 专属，但 email/url/numeric 这类例子天然更适合文本输入。</div>'],
+        ['id' => 'sanitize_title_demo', 'type' => 'text', 'title' => 'sanitize 清洗', 'subtitle' => '保存时执行 sanitize_title，把内容清洗成 slug。', 'placeholder' => '例如 Hello World 2026', 'default' => 'Hello World 2026', 'width' => 'full', 'sanitize' => 'sanitize_title'],
+
+        ['id' => 'validate_required', 'type' => 'text', 'title' => 'required 必填验证', 'subtitle' => '保存时不能为空。', 'placeholder' => '留空后保存会显示字段错误', 'default' => '', 'width' => '1/2', 'required' => true],
+        ['id' => 'validate_email', 'type' => 'text', 'title' => 'email 邮箱验证', 'subtitle' => 'validate => email。', 'placeholder' => 'name@example.com', 'default' => 'demo@example.com', 'width' => '1/2', 'validate' => 'email'],
+        ['id' => 'validate_numeric', 'type' => 'text', 'title' => 'numeric 数字验证', 'subtitle' => 'validate => numeric。', 'placeholder' => '请输入数字', 'default' => '100', 'width' => '1/2', 'validate' => 'numeric'],
+        ['id' => 'validate_url', 'type' => 'text', 'title' => 'url 地址验证', 'subtitle' => 'validate => url。', 'placeholder' => 'https://example.com', 'default' => 'https://example.com', 'width' => '1/2', 'validate' => 'url'],
+    ],
+]);
+
+// 字段展示：Accordion / 手风琴折叠。
+\Eva::createSection('eva_demo', [
+    'id'     => 'field-accordion',
+    'title'  => '手风琴折叠',
+    'icon'   => 'ri-menu-fold-line',
+    'fields' => [
+        ['id' => 'accordion_intro', 'type' => 'html', 'title' => '字段说明', 'width' => 'full', 'html' => '<div class="eva-html-note">accordion 用来把复杂配置拆成多个折叠面板；保存值为对象结构：{ section_id: { child_field_id: value } }。</div>'],
+        ['id' => 'accordion_menu_config', 'type' => 'accordion', 'title' => '菜单字段配置', 'subtitle' => '多面板可同时展开，适合菜单、模块、卡片等成组配置。', 'desc' => '演示 default_open、badge、disabled、open_icon、closed_icon 和子字段布局。', 'default_open' => ['basic', 'style'], 'multiple' => true, 'closed_icon' => 'ri-arrow-down-s-line', 'open_icon' => 'ri-arrow-up-s-line', 'width' => 'full', 'sections' => [
+            ['id' => 'basic', 'title' => '基础信息', 'icon' => 'ri-information-line', 'desc' => '配置菜单标题、描述和启用状态。', 'badge' => '基础', 'fields' => [
+                ['id' => 'menu_title', 'type' => 'text', 'title' => '菜单标题', 'default' => 'Eva 菜单', 'placeholder' => '请输入菜单标题', 'width' => '1/2'],
+                ['id' => 'menu_desc', 'type' => 'textarea', 'title' => '菜单描述', 'default' => '这里是手风琴字段里的描述内容。', 'width' => '1/2'],
+                ['id' => 'menu_enabled', 'type' => 'switcher', 'title' => '启用菜单', 'default' => 1, 'width' => '1/2'],
+                ['id' => 'menu_icon', 'type' => 'icon', 'title' => '菜单图标', 'default' => 'ri-menu-4-line', 'width' => '1/2'],
+            ]],
+            ['id' => 'style', 'title' => '样式配置', 'icon' => 'ri-palette-line', 'desc' => '配置颜色、展示方式和布局参数。', 'badge' => '样式', 'fields' => [
+                ['id' => 'menu_color', 'type' => 'color', 'title' => '菜单主色', 'default' => '#7C3AED', 'alpha' => true, 'width' => '1/2'],
+                ['id' => 'menu_layout', 'type' => 'select', 'title' => '菜单布局', 'default' => 'vertical', 'width' => '1/2', 'options' => [
+                    'vertical' => '纵向菜单',
+                    'horizontal' => '横向菜单',
+                    'compact' => '紧凑菜单',
+                ]],
+                ['id' => 'menu_badges', 'type' => 'select', 'title' => '菜单角标', 'default' => ['new'], 'multiple' => true, 'sortable' => true, 'searchable' => true, 'width' => 'full', 'options' => [
+                    'new' => '新功能',
+                    'hot' => '热门',
+                    'beta' => '测试版',
+                    'pro' => '专业版',
+                ]],
+            ]],
+            ['id' => 'media', 'title' => '媒体配置', 'icon' => 'ri-image-line', 'desc' => '配置菜单封面或展示图。', 'badge' => '媒体', 'fields' => [
+                ['id' => 'menu_cover', 'type' => 'upload', 'title' => '菜单封面', 'button_title' => '选择封面', 'library' => 'image', 'preview' => true, 'return_type' => 'url', 'width' => 'full'],
+            ]],
+            ['id' => 'locked', 'title' => '禁用面板', 'icon' => 'ri-lock-line', 'desc' => '此面板禁用，用于展示 section.disabled。', 'badge' => '禁用', 'disabled' => true, 'fields' => [
+                ['id' => 'locked_text', 'type' => 'text', 'title' => '禁用说明', 'default' => '当前面板不可编辑', 'width' => 'full'],
+            ]],
+        ]],
+    ],
+]);
+
+// 字段展示：Icon / 图标选择。
+\Eva::createSection('eva_demo', [
+    'id'     => 'field-icon',
+    'title'  => '图标选择',
+    'icon'   => 'ri-star-line',
+    'fields' => [
+        ['id' => 'icon_intro', 'type' => 'html', 'title' => '字段说明', 'width' => 'full', 'html' => '<div class="eva-html-note">icon 字段保存图标名称字符串，适合菜单图标、模块图标、按钮图标等场景。当前支持 Remixicon、Font Awesome 常用名映射和 WordPress Dashicons。</div>'],
+        ['id' => 'icon_remix', 'type' => 'icon', 'title' => 'Remixicon 图标', 'subtitle' => 'library => remix，保存值类似 ri-star-fill。', 'default' => 'ri-star-fill', 'library' => 'remix', 'placeholder' => '请选择 Remixicon 图标', 'width' => '1/2'],
+        ['id' => 'icon_fa', 'type' => 'icon', 'title' => 'Font Awesome 常用名', 'subtitle' => 'library => fa，内部映射到可预览的图标。', 'default' => 'star', 'library' => 'fa', 'placeholder' => '例如 star / user / home', 'width' => '1/2'],
+        ['id' => 'icon_dashicons', 'type' => 'icon', 'title' => 'Dashicons 图标', 'subtitle' => 'library => dashicons，适合 WordPress 后台风格。', 'default' => 'admin-settings', 'library' => 'dashicons', 'placeholder' => '请选择 Dashicons 图标', 'width' => '1/2'],
+        ['id' => 'icon_iconfont', 'type' => 'icon', 'title' => '阿里 Iconfont SVG', 'subtitle' => 'library => iconfont；先在右抽屉填写 Symbol JS 地址。', 'default' => '', 'library' => 'iconfont', 'placeholder' => '例如 #icon-home', 'width' => '1/2'],
+        ['id' => 'icon_menu_scene', 'type' => 'icon', 'title' => '菜单场景示例', 'subtitle' => '用于左侧菜单、模块入口、功能卡片。', 'default' => 'ri-menu-4-line', 'library' => 'remix', 'placeholder' => '请选择菜单图标', 'width' => '1/2'],
+        ['id' => 'icon_usage_note', 'type' => 'html', 'title' => '配置示例', 'width' => 'full', 'html' => '<div class="eva-html-note"><code>type => icon</code>，常用参数：<code>library</code>、<code>default</code>、<code>placeholder</code>。保存结果是字符串，可直接用于前端 class 或后台菜单图标。</div>'],
+    ],
+]);
+
+// 字段展示：页面构建器（三栏：左模块 / 中预览 / 右字段）。
+\Eva::createSection('eva_demo', [
+    'id'     => 'field-builder',
+    'title'  => '页面构建器',
+    'icon'   => 'ri-layout-masonry-line',
+    'fields' => [
+        ['id' => 'pb_overview', 'type' => 'html', 'width' => 'full', 'html' => '<div class="eva-html-note">三栏页面构建器外壳：左侧从 <code>window.EvaModules</code> 取模块、点击加入；中间实时预览，可选中 / 上移下移 / 复制 / 删除；右侧复用 <code>EvaFields</code> 编辑选中模块的参数。模块由用户自行注册，这里内置一个 <code>hero</code> 示例。</div>'],
+        ['id' => 'page_blocks', 'type' => 'builder', 'title' => '页面内容', 'desc' => '点击左侧模块加入页面，选中后在右侧编辑参数；保存值为模块实例数组。', 'default' => [], 'width' => 'full'],
     ],
 ]);
 
@@ -449,12 +562,124 @@ if (! function_exists('eva_demo_image_select_options')) {
     ],
 ]);
 
+// 字段展示：Dependency / 字段依赖。
+\Eva::createSection('eva_demo', [
+    'id'     => 'field-dependency',
+    'title'  => '字段依赖',
+    'icon'   => 'ri-git-branch-line',
+    'fields' => [
+        ['id' => 'dep_enable_csf', 'type' => 'switcher', 'title' => 'CSF 兼容开关', 'desc' => '开启后，下方 CSF dependency 写法的字段才会显示。', 'default' => false, 'width' => '1/3'],
+        ['id' => 'dep_csf_text', 'type' => 'text', 'title' => 'CSF dependency 显示字段', 'desc' => '使用 dependency => array("dep_enable_csf", "==", "true")，用于验证旧 CSF 配置迁移。', 'default' => '开启开关后显示', 'width' => '2/3', 'dependency' => ['dep_enable_csf', '==', 'true']],
+
+        ['id' => 'dep_mode', 'type' => 'select', 'title' => '依赖模式', 'desc' => '切换不同模式，观察下方字段状态。', 'default' => 'basic', 'width' => '1/3', 'options' => [
+            'basic'    => '基础模式',
+            'advanced' => '高级模式',
+            'pro'      => '专业模式',
+        ]],
+        ['id' => 'dep_visible_text', 'type' => 'text', 'title' => 'visible 模式置灰', 'desc' => '只有选择“高级模式”才可编辑；不满足时保留显示但置灰遮罩。', 'default' => 'visible_if + dependency_action=visible', 'width' => '2/3', 'dependency_action' => 'visible', 'visible_if' => [
+            ['source' => 'field', 'id' => 'dep_mode', 'operator' => '==', 'value' => 'advanced'],
+        ]],
+
+        ['id' => 'dep_disabled_text', 'type' => 'text', 'title' => 'disabled_if 禁用字段', 'desc' => '选择“专业模式”时会禁用并置灰。', 'default' => '专业模式下禁用', 'width' => '1/2', 'disabled_if' => [
+            ['source' => 'field', 'id' => 'dep_mode', 'operator' => '==', 'value' => 'pro'],
+        ]],
+        ['id' => 'dep_readonly_text', 'type' => 'text', 'title' => 'readonly_if 只读字段', 'desc' => '选择“专业模式”时进入只读遮罩状态。', 'default' => '专业模式下只读', 'width' => '1/2', 'readonly_if' => [
+            ['source' => 'field', 'id' => 'dep_mode', 'operator' => '==', 'value' => 'pro'],
+        ]],
+
+        ['id' => 'dep_multi_text', 'type' => 'text', 'title' => '多条件依赖', 'desc' => '需要同时开启 CSF 开关，并选择高级模式。', 'default' => '两个条件都满足才显示', 'width' => 'full', 'visible_if' => [
+            'relation' => 'and',
+            'rules'    => [
+                ['source' => 'field', 'id' => 'dep_enable_csf', 'operator' => '==', 'value' => true],
+                ['source' => 'field', 'id' => 'dep_mode', 'operator' => '==', 'value' => 'advanced'],
+            ],
+        ]],
+
+        ['id' => 'dep_cross_option_note', 'type' => 'text', 'title' => '跨 option 依赖', 'desc' => '读取当前 demo option 中“常规设置 > 启用示例功能”的已保存值。先保存常规设置并刷新页面，即可看到跨来源依赖效果。', 'default' => '外部 option 满足后显示', 'width' => 'full', 'visible_if' => [
+            ['source' => 'option', 'option' => 'eva_demo', 'key' => 'enable_feature', 'operator' => '==', 'value' => true],
+        ]],
+
+        ['id' => 'dep_save_policy', 'type' => 'text', 'title' => '隐藏时不保存', 'desc' => '关闭 CSF 兼容开关后，此字段会隐藏，并因 save_when_hidden=false 在保存时从结果中跳过。', 'default' => '这个值只在字段显示时保存', 'width' => 'full', 'save_when_hidden' => false, 'dependency' => ['dep_enable_csf', '==', 'true']],
+
+        ['id' => 'dep_keyword', 'type' => 'text', 'title' => '关键词条件', 'desc' => '输入任意内容，用于演示 empty / not_empty 条件。', 'default' => '', 'placeholder' => '输入后触发 not_empty 示例', 'width' => '1/2'],
+        ['id' => 'dep_keyword_not_empty', 'type' => 'text', 'title' => 'not_empty 示例', 'desc' => '关键词不为空时显示。', 'default' => '关键词已有内容', 'width' => '1/2', 'visible_if' => [
+            ['source' => 'field', 'id' => 'dep_keyword', 'operator' => 'not_empty'],
+        ]],
+        ['id' => 'dep_keyword_empty', 'type' => 'text', 'title' => 'empty 示例', 'desc' => '关键词为空时显示。', 'default' => '关键词为空', 'width' => 'full', 'visible_if' => [
+            ['source' => 'field', 'id' => 'dep_keyword', 'operator' => 'empty'],
+        ]],
+
+        ['id' => 'dep_modules', 'type' => 'select', 'title' => '模块多选条件', 'desc' => '用于演示 contains / not_contains；选择多个模块后观察下方字段。', 'default' => ['header', 'sidebar'], 'multiple' => true, 'sortable' => true, 'width' => 'full', 'options' => [
+            'header'  => '头部模块',
+            'hero'    => '首屏模块',
+            'sidebar' => '侧边栏',
+            'footer'  => '底部模块',
+        ]],
+        ['id' => 'dep_contains_sidebar', 'type' => 'text', 'title' => 'contains 示例', 'desc' => '模块多选中包含“侧边栏”时显示。', 'default' => '已包含 sidebar', 'width' => '1/2', 'visible_if' => [
+            ['source' => 'field', 'id' => 'dep_modules', 'operator' => 'contains', 'value' => 'sidebar'],
+        ]],
+        ['id' => 'dep_not_contains_footer', 'type' => 'text', 'title' => 'not_contains 示例', 'desc' => '模块多选中不包含“底部模块”时显示。', 'default' => '未包含 footer', 'width' => '1/2', 'visible_if' => [
+            ['source' => 'field', 'id' => 'dep_modules', 'operator' => 'not_contains', 'value' => 'footer'],
+        ]],
+
+        ['id' => 'dep_score', 'type' => 'text', 'title' => '数字比较条件', 'desc' => '输入数字，演示 > / >= / < / <= 这类比较。', 'default' => '5', 'placeholder' => '例如 8', 'width' => '1/3'],
+        ['id' => 'dep_score_high', 'type' => 'text', 'title' => '> 数字比较示例', 'desc' => '数字大于 7 时显示。', 'default' => '当前数值大于 7', 'width' => '2/3', 'visible_if' => [
+            ['source' => 'field', 'id' => 'dep_score', 'operator' => '>', 'value' => 7],
+        ]],
+        ['id' => 'dep_score_ge', 'type' => 'text', 'title' => '>= 数字比较示例', 'desc' => '数字大于等于 5 时显示。', 'default' => '当前数值大于等于 5', 'width' => '1/3', 'visible_if' => [
+            ['source' => 'field', 'id' => 'dep_score', 'operator' => '>=', 'value' => 5],
+        ]],
+        ['id' => 'dep_score_lt', 'type' => 'text', 'title' => '< 数字比较示例', 'desc' => '数字小于 5 时显示。', 'default' => '当前数值小于 5', 'width' => '1/3', 'visible_if' => [
+            ['source' => 'field', 'id' => 'dep_score', 'operator' => '<', 'value' => 5],
+        ]],
+        ['id' => 'dep_score_le', 'type' => 'text', 'title' => '<= 数字比较示例', 'desc' => '数字小于等于 5 时显示。', 'default' => '当前数值小于等于 5', 'width' => '1/3', 'visible_if' => [
+            ['source' => 'field', 'id' => 'dep_score', 'operator' => '<=', 'value' => 5],
+        ]],
+
+        ['id' => 'dep_or_relation', 'type' => 'text', 'title' => 'OR 关系示例', 'desc' => '选择“专业模式”或关键词不为空，任一满足即显示。', 'default' => 'relation=or 已满足', 'width' => 'full', 'visible_if' => [
+            'relation' => 'or',
+            'rules'    => [
+                ['source' => 'field', 'id' => 'dep_mode', 'operator' => '==', 'value' => 'pro'],
+                ['source' => 'field', 'id' => 'dep_keyword', 'operator' => 'not_empty'],
+            ],
+        ]],
+
+        ['id' => 'dep_not_equal', 'type' => 'text', 'title' => '!= 示例', 'desc' => '依赖模式不等于“基础模式”时显示。', 'default' => '当前不是基础模式', 'width' => '1/2', 'visible_if' => [
+            ['source' => 'field', 'id' => 'dep_mode', 'operator' => '!=', 'value' => 'basic'],
+        ]],
+        ['id' => 'dep_any_mode', 'type' => 'text', 'title' => 'any 示例', 'desc' => '依赖模式是“高级模式”或“专业模式”时显示。', 'default' => '命中 any: advanced,pro', 'width' => '1/2', 'visible_if' => [
+            ['source' => 'field', 'id' => 'dep_mode', 'operator' => 'any', 'value' => 'advanced,pro'],
+        ]],
+        ['id' => 'dep_not_any_mode', 'type' => 'text', 'title' => 'not_any 示例', 'desc' => '依赖模式不是“专业模式”时显示。', 'default' => '未命中 pro', 'width' => '1/2', 'visible_if' => [
+            ['source' => 'field', 'id' => 'dep_mode', 'operator' => 'not_any', 'value' => 'pro'],
+        ]],
+        ['id' => 'dep_in_module', 'type' => 'text', 'title' => 'in 示例', 'desc' => '模块多选中包含“头部模块”时显示；in 与 any 语义一致。', 'default' => '模块中包含 header', 'width' => '1/2', 'visible_if' => [
+            ['source' => 'field', 'id' => 'dep_modules', 'operator' => 'in', 'value' => 'header'],
+        ]],
+        ['id' => 'dep_not_in_module', 'type' => 'text', 'title' => 'not_in 示例', 'desc' => '模块多选中不包含“首屏模块”时显示。', 'default' => '模块中不包含 hero', 'width' => 'full', 'visible_if' => [
+            ['source' => 'field', 'id' => 'dep_modules', 'operator' => 'not_in', 'value' => 'hero'],
+        ]],
+
+        ['id' => 'dep_truth_flag', 'type' => 'switcher', 'title' => 'truthy / falsy 控制开关', 'desc' => '用于演示 truthy 和 falsy 条件。', 'default' => false, 'width' => '1/3'],
+        ['id' => 'dep_truthy_text', 'type' => 'text', 'title' => 'truthy 示例', 'desc' => '控制开关为真时显示。', 'default' => '开关为真', 'width' => '1/3', 'visible_if' => [
+            ['source' => 'field', 'id' => 'dep_truth_flag', 'operator' => 'truthy'],
+        ]],
+        ['id' => 'dep_falsy_text', 'type' => 'text', 'title' => 'falsy 示例', 'desc' => '控制开关为假时显示。', 'default' => '开关为假', 'width' => '1/3', 'visible_if' => [
+            ['source' => 'field', 'id' => 'dep_truth_flag', 'operator' => 'falsy'],
+        ]],
+
+        ['id' => 'dep_site_option_note', 'type' => 'text', 'title' => 'site_option 来源示例', 'desc' => '读取 WordPress 多站点网络选项 site_name；单站点若该值不存在，此字段会隐藏。', 'default' => 'site_option(site_name) 不为空', 'width' => 'full', 'visible_if' => [
+            ['source' => 'site_option', 'option' => 'site_name', 'operator' => 'not_empty'],
+        ]],
+    ],
+]);
+
 // 帮助中心：CSF 里就是个 iframe，直接搬过来即可用。
 \Eva::createSection('eva_demo', [
     'id'     => 'renewal-help',
     'title'  => '帮助中心',
     'fields' => [
-        ['id' => 'help_doc', 'type' => 'html', 'width' => 'full', 'html' => '<div class="eva-embed"><iframe src="https://docs.9wt.cn/" loading="lazy"></iframe></div>'],
+        ['id' => 'help_doc', 'type' => 'html', 'width' => 'full', 'flush' => true, 'html' => '<div class="eva-embed"><iframe src="https://docs.9wt.cn/" loading="lazy"></iframe></div>'],
     ],
 ]);
 

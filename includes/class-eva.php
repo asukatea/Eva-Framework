@@ -550,9 +550,149 @@ if (! class_exists('Eva')) {
         }
 
         /**
+         * 输出所有 options 容器里声明了 output 的字段 CSS。
+         *
+         * 用法：字段写 `output => '.selector'`，可选 `output_mode => 'background-color'`。
+         *
+         * @return void
+         */
+        public static function output_css()
+        {
+            $css = '';
+            foreach (self::$options as $option_id => $option) {
+                $values = self::get_values($option_id);
+                $css .= self::build_output_css(isset($option['sections']) ? $option['sections'] : [], $values);
+            }
+
+            if ($css !== '') {
+                echo '<style id="eva-framework-output-css">' . "\n" . $css . '</style>' . "\n"; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+            }
+        }
+
+        /**
+         * 根据 sections 与已保存值生成 CSS。
+         *
+         * @param array $sections 字段分组。
+         * @param array $values   已保存字段值。
+         * @return string         CSS 字符串。
+         */
+        public static function build_output_css($sections, $values)
+        {
+            $css = '';
+            foreach ((array) $sections as $section) {
+                foreach ((isset($section['fields']) ? (array) $section['fields'] : []) as $field) {
+                    if (empty($field['id']) || empty($field['output'])) {
+                        continue;
+                    }
+
+                    $id = (string) $field['id'];
+                    $value = array_key_exists($id, $values)
+                        ? $values[$id]
+                        : (isset($field['default']) ? $field['default'] : null);
+
+                    $rule = self::field_output_rule($field, $value);
+                    if ($rule !== '') {
+                        $css .= $rule;
+                    }
+                }
+            }
+
+            return $css;
+        }
+
+        /**
+         * 生成单个字段的 CSS 输出规则。
+         *
+         * @param array $field 字段 schema。
+         * @param mixed $value 字段值。
+         * @return string      CSS 规则。
+         */
+        private static function field_output_rule($field, $value)
+        {
+            if (is_array($value) || is_object($value) || $value === null || $value === '') {
+                return '';
+            }
+
+            $selectors = is_array($field['output']) ? $field['output'] : [$field['output']];
+            $mode = isset($field['output_mode']) ? $field['output_mode'] : self::default_output_mode(isset($field['type']) ? $field['type'] : 'text');
+            $properties = is_array($mode) ? $mode : [$mode];
+
+            $selector_text = implode(',', array_filter(array_map([self::class, 'sanitize_css_selector'], $selectors)));
+            if ($selector_text === '') {
+                return '';
+            }
+
+            $declarations = [];
+            foreach ($properties as $property) {
+                $property = self::sanitize_css_property($property);
+                if ($property === '') {
+                    continue;
+                }
+                $declarations[] = $property . ':' . self::sanitize_css_value($value, $property) . ';';
+            }
+
+            if (! $declarations) {
+                return '';
+            }
+
+            return $selector_text . '{' . implode('', $declarations) . "}\n";
+        }
+
+        /**
+         * 按字段类型推导默认 CSS 属性。
+         *
+         * @param string $type 字段类型。
+         * @return string      CSS 属性。
+         */
+        private static function default_output_mode($type)
+        {
+            return ($type === 'color') ? 'color' : '';
+        }
+
+        /**
+         * 清洗 CSS selector，阻断花括号等可逃逸字符。
+         *
+         * @param mixed $selector 原始 selector。
+         * @return string
+         */
+        private static function sanitize_css_selector($selector)
+        {
+            $selector = wp_strip_all_tags((string) $selector);
+            return trim(str_replace(['{', '}', ';'], '', $selector));
+        }
+
+        /**
+         * 清洗 CSS 属性名。
+         *
+         * @param mixed $property 原始属性。
+         * @return string
+         */
+        private static function sanitize_css_property($property)
+        {
+            $property = strtolower((string) $property);
+            return preg_replace('/[^a-z0-9\-_]/', '', $property);
+        }
+
+        /**
+         * 清洗 CSS 属性值。
+         *
+         * @param mixed  $value    原始值。
+         * @param string $property CSS 属性。
+         * @return string
+         */
+        private static function sanitize_css_value($value, $property)
+        {
+            $value = trim((string) $value);
+            if ($property === 'background-image') {
+                return 'url("' . esc_url_raw($value) . '")';
+            }
+            return esc_html($value);
+        }
+
+        /**
          * 序列化前预处理分区：执行 callback 字段（PHP 回调输出 HTML），转为可 JSON 的 html 字段；
          * 并清除任何不可序列化的 callable，保证 sections 能安全注入前端。
-         * callback 字段写法：['type' => 'callback', 'function' => callable]，回调内 echo 或 return HTML。
+         * callback 字段写法：['type' => 'callback', 'function' => callable, 'args' => mixed]，回调内 echo 或 return HTML。
          *
          * @param array $sections 原始分区数组。
          * @return array          可安全 JSON 化的分区数组（callback 已转 html、callable 已剔除）。
@@ -568,12 +708,13 @@ if (! class_exists('Eva')) {
                         $is_cb = isset($f['type']) && $f['type'] === 'callback';
                         if ($is_cb && isset($f['function']) && is_callable($f['function'])) {
                             ob_start();
-                            $ret  = call_user_func($f['function']);
+                            $ret  = array_key_exists('args', $f) ? call_user_func($f['function'], $f['args']) : call_user_func($f['function']);
                             $echo = ob_get_clean();
                             $f['type'] = 'html';
                             $f['html'] = ($echo !== '' ? $echo : (is_string($ret) ? $ret : ''));
                         }
                         unset($f['function']); // 闭包/可调用不可 JSON 化，统一清除
+                        unset($f['args']); // callback 已执行，参数不再需要注入前端
                         $sec['fields'][$i] = $f;
                     }
                     // 重排索引，避免删改后出现稀疏数组（JSON 会变成对象）。
@@ -581,7 +722,7 @@ if (! class_exists('Eva')) {
                 }
                 $out[] = $sec;
             }
-            return array_values($out);
+            return \Eva\Framework\Admin\Dependency::prepare_sections(array_values($out));
         }
 
         /**
@@ -750,11 +891,13 @@ if (! class_exists('Eva')) {
             // 容器 id（缺失则空串，前端据此定位实例）。
             $id = isset($cfg['container_id']) ? $cfg['container_id'] : '';
             // 组装注入前端的数据负载：name 前缀缺省为 eva_fields[{id}]；sections 先做可序列化预处理。
+            $sections = self::prepare_sections(isset($cfg['sections']) ? $cfg['sections'] : []);
             $payload = [
                 'container'  => $container,
                 'id'         => $id,
                 'namePrefix' => $name_prefix !== '' ? $name_prefix : ('eva_fields[' . $id . ']'),
-                'sections'   => self::prepare_sections(isset($cfg['sections']) ? $cfg['sections'] : []),
+                'sections'   => $sections,
+                'dependencySources' => \Eva\Framework\Admin\Dependency::dependency_sources($sections),
                 'values'     => is_array($values) ? $values : [],
             ];
             // 用安全选项编码为 JSON，内联进挂载点的 <script type="application/json">。

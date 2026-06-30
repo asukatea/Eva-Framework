@@ -16,17 +16,17 @@
 (function () {
   window.EvaFields = window.EvaFields || {};
 
-  // Purpose: Read the Eva runtime config injected by PHP.
+  // 功能：处理 Cfg 相关逻辑。
   function Cfg() {
     return (window.EvaFW && window.EvaFW.config) || {};
   }
 
-  // Purpose: Resolve multilingual values for the current language.
+  // 功能：处理 Tv 相关逻辑。
   function Tv(value) {
     return window.EvaI18n && window.EvaI18n.tv ? window.EvaI18n.tv(value) : (value || '');
   }
 
-  // Purpose: Convert post_type config into the AJAX query parameter.
+  // 功能：处理 Post Type Param 相关逻辑。
   function Post_Type_Param(postType) {
     if (Array.isArray(postType)) {
       return postType.join(',');
@@ -37,7 +37,7 @@
   window.EvaFields.ajax_select = {
     props: ['field', 'modelValue'],
     emits: ['update:modelValue'],
-    // Purpose: Initialize component state and exposed reactive data.
+    // 功能：初始化组件响应式状态与对外数据。
     data: function () {
       return {
         open: false,
@@ -51,11 +51,11 @@
       };
     },
     computed: {
-      // Purpose: Handle min Chars behavior.
+      // 功能：处理 min Chars 相关逻辑。
       minChars: function () {
         return Math.max(0, parseInt(this.field.min_chars || this.field.minChars || 2, 10) || 0);
       },
-      // Purpose: Handle value Label behavior.
+      // 功能：处理 value Label 相关逻辑。
       valueLabel: function () {
         if (this.isMultiple) {
           return this.selected.length ? '' : Tv(this.field.placeholder || '请选择');
@@ -65,19 +65,19 @@
         }
         return this.modelValue ? ('#' + this.modelValue) : Tv(this.field.placeholder || '请选择');
       },
-      // Purpose: Check is Placeholder state.
+      // 功能：判断 is Placeholder 状态。
       isPlaceholder: function () {
         return this.isMultiple ? !this.values.length : !this.modelValue;
       },
-      // Purpose: Check is Multiple state.
+      // 功能：判断 is Multiple 状态。
       isMultiple: function () {
         return this.field.multiple === true || this.field.multiple === 'true';
       },
-      // Purpose: Check can Sort state.
+      // 功能：判断 can Sort 状态。
       canSort: function () {
         return this.isMultiple && (this.field.sortable === true || this.field.sortable === 'true');
       },
-      // Purpose: Handle values behavior.
+      // 功能：处理 values 相关逻辑。
       values: function () {
         if (this.isMultiple) {
           return Array.isArray(this.modelValue) ? this.modelValue.map(String) : [];
@@ -85,14 +85,14 @@
         return this.modelValue ? [String(this.modelValue)] : [];
       }
     },
-    // Purpose: Run component mount initialization.
+    // 功能：组件挂载后执行初始化和事件绑定。
     mounted: function () {
       document.addEventListener('mousedown', this.onDocDown, true);
       if (this.values.length) {
         this.fetchItems('', this.values.join(','));
       }
     },
-    // Purpose: Clean up listeners, timers, or temporary state before unmount.
+    // 功能：组件销毁前清理事件、计时器或临时状态。
     beforeUnmount: function () {
       document.removeEventListener('mousedown', this.onDocDown, true);
       if (this.timer) {
@@ -101,13 +101,13 @@
     },
     methods: {
       Tv: Tv,
-      // Purpose: Handle on Doc Down behavior.
+      // 功能：处理 on Doc Down 相关逻辑。
       onDocDown: function (e) {
         if (this.open && this.$el && !this.$el.contains(e.target)) {
           this.close();
         }
       },
-      // Purpose: Open open Menu UI or state.
+      // 功能：打开 open Menu 相关界面或状态。
       openMenu: function () {
         if (this.field.disabled) { return; }
         this.open = true;
@@ -119,20 +119,20 @@
           }
         });
       },
-      // Purpose: Close close UI or state.
+      // 功能：关闭 close 相关界面或状态。
       close: function () {
         this.open = false;
         this.query = '';
         this.items = [];
         this.error = '';
       },
-      // Purpose: Handle clear behavior.
+      // 功能：清空 clear 相关状态。
       clear: function () {
         if (this.field.disabled) { return; }
         this.selected = [];
         this.$emit('update:modelValue', this.isMultiple ? [] : '');
       },
-      // Purpose: Handle on Input behavior.
+      // 功能：处理 on Input 相关逻辑。
       onInput: function () {
         var self = this;
         if (this.timer) {
@@ -142,7 +142,7 @@
           self.fetchItems(self.query, 0);
         }, 220);
       },
-      // Purpose: Handle fetch Items behavior.
+      // 功能：处理 fetch Items 相关逻辑。
       fetchItems: function (query, includeId) {
         var q = (query || '').trim();
         if (!includeId && q.length < this.minChars) {
@@ -183,7 +183,7 @@
             self.loading = false;
           });
       },
-      // Purpose: Handle pick behavior.
+      // 功能：处理 pick 相关逻辑。
       pick: function (item) {
         if (this.isMultiple) {
           var values = this.values.slice();
@@ -203,23 +203,23 @@
         this.$emit('update:modelValue', item.value);
         this.close();
       },
-      // Purpose: Check is Selected state.
+      // 功能：判断 is Selected 状态。
       isSelected: function (item) {
         return this.values.indexOf(String(item.value)) !== -1;
       },
-      // Purpose: Handle remove Value behavior.
+      // 功能：移除 remove Value 对应条目。
       removeValue: function (value) {
         var stringValue = String(value);
         var values = this.values.filter(function (item) { return item !== stringValue; });
         this.selected = this.selected.filter(function (item) { return String(item.value) !== stringValue; });
         this.$emit('update:modelValue', values);
       },
-      // Purpose: Handle drag Start behavior.
+      // 功能：处理 drag Start 相关逻辑。
       dragStart: function (index) {
         if (!this.canSort) { return; }
         this.dragIndex = index;
       },
-      // Purpose: Handle drop Value behavior.
+      // 功能：处理 drop Value 相关逻辑。
       dropValue: function (index) {
         if (!this.canSort || this.dragIndex === null || this.dragIndex === index) {
           this.dragIndex = null;
@@ -235,7 +235,7 @@
         this.selected = selected;
         this.$emit('update:modelValue', values);
       },
-      // Purpose: Handle sort Items By Values behavior.
+      // 功能：处理 sort Items By Values 相关逻辑。
       sortItemsByValues: function (items, values) {
         return values.map(function (value) {
           return items.filter(function (item) { return String(item.value) === String(value); })[0] || null;

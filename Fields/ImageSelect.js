@@ -23,24 +23,24 @@
 (function () {
   window.EvaFields = window.EvaFields || {};
 
-  // Purpose: Resolve multilingual values for the current language.
+  // 功能：处理 Tv 相关逻辑。
   function Tv(value) {
     return window.EvaI18n && window.EvaI18n.tv ? window.EvaI18n.tv(value) : (value || '');
   }
 
-  // Purpose: Convert numeric or string size values into CSS values.
+  // 功能：处理 Css Size 相关逻辑。
   function Css_Size(value) {
     if (value == null || value === '') { return ''; }
     return /^\d+$/.test(String(value)) ? String(value) + 'px' : String(value);
   }
 
-  // Purpose: Convert ratio config into CSS aspect-ratio syntax.
+  // 功能：处理 Css Ratio 相关逻辑。
   function Css_Ratio(value) {
     if (value == null || value === '') { return '16 / 9'; }
     return String(value).replace(':', ' / ');
   }
 
-  // Purpose: Normalize one image_select option for rendering.
+  // 功能：归一化 Normalize Option 数据结构。
   function Normalize_Option(key, item, index) {
     var isObject = item && typeof item === 'object' && !Array.isArray(item);
     var value = isObject
@@ -63,7 +63,7 @@
     };
   }
 
-  // Purpose: Normalize option input into a consistent list.
+  // 功能：归一化 Normalize List 数据结构。
   function Normalize_List(raw) {
     if (Array.isArray(raw)) {
       return raw.map(function (item, index) { return Normalize_Option(index, item, index); });
@@ -77,37 +77,37 @@
   window.EvaFields.image_select = {
     props: ['field', 'modelValue'],
     emits: ['update:modelValue'],
-    // Purpose: Initialize component state and exposed reactive data.
+    // 功能：初始化组件响应式状态与对外数据。
     data: function () {
       return { zoomOption: null, query: '', loaded: {}, rootWidth: 0, extraOptions: [], ro: null };
     },
     computed: {
-      // Purpose: Check is Multiple state.
+      // 功能：判断 is Multiple 状态。
       isMultiple: function () { return this.field.multiple === true || this.field.multiple === 'true'; },
-      // Purpose: Handle max Count behavior.
+      // 功能：处理 max Count 相关逻辑。
       maxCount: function () {
         var m = parseInt(this.field.max || this.field.max_select || this.field.maxSelect || 0, 10);
         return m > 0 ? m : 0;
       },
-      // Purpose: Handle clearable behavior.
+      // 功能：清空 clearable 相关状态。
       clearable: function () { return this.field.clearable === true || this.field.clearable === 'true'; },
-      // Purpose: Handle searchable behavior.
+      // 功能：处理 searchable 相关逻辑。
       searchable: function () { return this.field.searchable === true || this.field.search === true; },
-      // Purpose: Handle lazy behavior.
+      // 功能：处理 lazy 相关逻辑。
       lazy: function () { return this.field.lazy === true || this.field.lazy_load === true || this.field.lazyLoad === true; },
-      // Purpose: Handle media Enabled behavior.
+      // 功能：处理 media Enabled 相关逻辑。
       mediaEnabled: function () { return this.field.media === true || this.field.allow_upload === true || this.field.allowUpload === true; },
-      // Purpose: Handle show Label behavior.
+      // 功能：处理 show Label 相关逻辑。
       showLabel: function () { return this.field.show_label !== false && this.field.showLabel !== false; },
-      // Purpose: Handle show Desc behavior.
+      // 功能：处理 show Desc 相关逻辑。
       showDesc: function () { return this.field.show_desc !== false && this.field.showDesc !== false; },
-      // Purpose: Handle zoom Enabled behavior.
+      // 功能：处理 zoom Enabled 相关逻辑。
       zoomEnabled: function () { return this.field.zoom !== false && this.field.lightbox !== false; },
-      // Purpose: Handle base Options behavior.
+      // 功能：处理 base Options 相关逻辑。
       baseOptions: function () { return Normalize_List(this.field.options || []); },
-      // Purpose: Handle options behavior.
+      // 功能：处理 options 相关逻辑。
       options: function () { return this.baseOptions.concat(this.extraOptions); },
-      // Purpose: Handle filtered Options behavior.
+      // 功能：处理 filtered Options 相关逻辑。
       filteredOptions: function () {
         var q = (this.query || '').trim().toLowerCase();
         if (!q) { return this.options; }
@@ -115,9 +115,9 @@
           return (Tv(o.label) + ' ' + Tv(o.desc) + ' ' + o.value).toLowerCase().indexOf(q) !== -1;
         });
       },
-      // Purpose: Check has Groups state.
+      // 功能：判断 has Groups 状态。
       hasGroups: function () { return this.options.some(function (o) { return !!o.group; }); },
-      // Purpose: Handle grouped Options behavior.
+      // 功能：处理 grouped Options 相关逻辑。
       groupedOptions: function () {
         var groups = [];
         var map = {};
@@ -128,18 +128,18 @@
         });
         return groups;
       },
-      // Purpose: Handle selected Values behavior.
+      // 功能：处理 selected Values 相关逻辑。
       selectedValues: function () {
         var v = this.modelValue;
         if (Array.isArray(v)) { return v.map(function (x) { return String(x); }); }
         if (v == null || v === '') { return []; }
         return [String(v)];
       },
-      // Purpose: Handle selected Count behavior.
+      // 功能：处理 selected Count 相关逻辑。
       selectedCount: function () { return this.selectedValues.length; },
-      // Purpose: Check has Selection state.
+      // 功能：判断 has Selection 状态。
       hasSelection: function () { return this.selectedCount > 0; },
-      // Purpose: Handle resolved Columns behavior.
+      // 功能：处理 resolved Columns 相关逻辑。
       resolvedColumns: function () {
         var sm = parseInt(this.field.columns_sm || this.field.columnsSm || 0, 10);
         var md = parseInt(this.field.columns_md || this.field.columnsMd || 0, 10);
@@ -152,7 +152,7 @@
         }
         return parseInt(this.field.columns || this.field.cols || 0, 10);
       },
-      // Purpose: Handle grid Style behavior.
+      // 功能：处理 grid Style 相关逻辑。
       gridStyle: function () {
         var columns = this.resolvedColumns;
         var explicitMinWidth = this.field.min_width || this.field.minWidth;
@@ -179,18 +179,18 @@
         style.gridTemplateColumns = 'repeat(auto-fit, minmax(' + Css_Size(explicitMinWidth || '138px') + ', 1fr))';
         return style;
       },
-      // Purpose: Handle show Toolbar behavior.
+      // 功能：处理 show Toolbar 相关逻辑。
       showToolbar: function () { return this.searchable || this.clearable || this.mediaEnabled || this.isMultiple; }
     },
     methods: {
       Tv: Tv,
-      // Purpose: Check is Selected state.
+      // 功能：判断 is Selected 状态。
       isSelected: function (option) { return this.selectedValues.indexOf(option.value) !== -1; },
-      // Purpose: Handle at Max behavior.
+      // 功能：处理 at Max 相关逻辑。
       atMax: function () { return this.isMultiple && this.maxCount > 0 && this.selectedCount >= this.maxCount; },
-      // Purpose: Handle emit Value behavior.
+      // 功能：处理 emit Value 相关逻辑。
       emitValue: function (val) { this.$emit('update:modelValue', val); },
-      // Purpose: Handle select Value behavior.
+      // 功能：处理 select Value 相关逻辑。
       selectValue: function (value, forceOn) {
         value = String(value);
         if (this.isMultiple) {
@@ -211,25 +211,25 @@
           }
         }
       },
-      // Purpose: Handle choose behavior.
+      // 功能：处理 choose 相关逻辑。
       choose: function (option) {
         if (this.field.disabled || option.disabled) { return; }
         this.selectValue(option.value, false);
       },
-      // Purpose: Handle clear All behavior.
+      // 功能：清空 clear All 相关状态。
       clearAll: function () {
         if (this.field.disabled) { return; }
         this.emitValue(this.isMultiple ? [] : '');
       },
-      // Purpose: Handle on Img Load behavior.
+      // 功能：处理 on Img Load 相关逻辑。
       onImgLoad: function (option) { this.loaded[option.value] = true; },
-      // Purpose: Check is Loaded state.
+      // 功能：判断 is Loaded 状态。
       isLoaded: function (option) { return !this.lazy || this.loaded[option.value] === true; },
-      // Purpose: Open open Zoom UI or state.
+      // 功能：打开 open Zoom 相关界面或状态。
       openZoom: function (option) { if (option.url) { this.zoomOption = option; } },
-      // Purpose: Close close Zoom UI or state.
+      // 功能：关闭 close Zoom 相关界面或状态。
       closeZoom: function () { this.zoomOption = null; },
-      // Purpose: Handle on Card Key behavior.
+      // 功能：处理 on Card Key 相关逻辑。
       onCardKey: function (e, option) {
         var k = e.key;
         if (k === 'Enter' || k === ' ' || k === 'Spacebar') {
@@ -241,7 +241,7 @@
           this.onNavKey(e);
         }
       },
-      // Purpose: Handle on Nav Key behavior.
+      // 功能：处理 on Nav Key 相关逻辑。
       onNavKey: function (e) {
         if (!this.$el || !this.$el.querySelectorAll) { return; }
         var cards = Array.prototype.slice.call(this.$el.querySelectorAll('.eva-is-card')).filter(function (c) {
@@ -261,7 +261,7 @@
         e.preventDefault();
         if (cards[next] && cards[next].focus) { cards[next].focus(); }
       },
-      // Purpose: Handle pick From Media behavior.
+      // 功能：处理 pick From Media 相关逻辑。
       pickFromMedia: function () {
         var self = this;
         if (!(window.wp && window.wp.media)) {
@@ -296,7 +296,7 @@
         });
         frame.open();
       },
-      // Purpose: Handle measure behavior.
+      // 功能：处理 measure 相关逻辑。
       measure: function () {
         if (this.$el && this.$el.getBoundingClientRect) {
           var w = this.$el.getBoundingClientRect().width;
@@ -304,7 +304,7 @@
         }
       }
     },
-    // Purpose: Run component mount initialization.
+    // 功能：组件挂载后执行初始化和事件绑定。
     mounted: function () {
       var self = this;
       this.measure();
@@ -316,7 +316,7 @@
         window.addEventListener('resize', this._onResize);
       }
     },
-    // Purpose: Clean up listeners, timers, or temporary state before unmount.
+    // 功能：组件销毁前清理事件、计时器或临时状态。
     beforeUnmount: function () {
       if (this.ro) { this.ro.disconnect(); this.ro = null; }
       if (this._onResize) { window.removeEventListener('resize', this._onResize); this._onResize = null; }

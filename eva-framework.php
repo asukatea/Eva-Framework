@@ -32,6 +32,12 @@ if (! defined('EVA_FW_DEV')) {
 
 // 门面：对外注册 API（注册表，置于 includes/ 根）
 require_once EVA_FW_DIR . 'includes/class-eva.php';
+// 字段后端处理器：与 Fields/*.js 对应，集中承载字段清洗与字段专属 AJAX。
+foreach (glob(EVA_FW_DIR . 'includes/admin/Fields/class-eva-field-*.php') as $eva_fw_field_file) {
+    require_once $eva_fw_field_file;
+}
+// 字段依赖规则处理器：兼容 CSF dependency，并扩展 Eva 的跨来源依赖。
+require_once EVA_FW_DIR . 'includes/admin/class-eva-dependency.php';
 // 数据层：清洗 + 保存
 require_once EVA_FW_DIR . 'includes/core/class-eva-data.php';
 // 后台呈现：设置页渲染 / 独立页路由 / 后台悬浮窗
@@ -63,6 +69,9 @@ new \Eva\Framework\Comment();
 new \Eva\Framework\Customize();
 new \Eva\Framework\Shortcoder();
 new \Eva\Framework\Widget();
+
+// 字段 output/output_mode：把设置值自动输出为前台 CSS。
+add_action('wp_head', ['Eva', 'output_css'], 99);
 
 // 插件激活时刷新伪静态规则（规则由 Standalone 在 init 依据注册表动态生成；
 // 主题内嵌等无激活钩子的场景由 Standalone 的「规则签名」机制兜底 flush）

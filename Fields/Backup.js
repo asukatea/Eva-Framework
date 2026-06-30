@@ -28,13 +28,13 @@
 
   // 读取 Eva 注入的运行时配置，主要用于 REST 根地址、REST nonce 和 admin-ajax 地址。
   function Cfg() { return (window.EvaFW && window.EvaFW.config) || {}; }
-  // Purpose: Build the WordPress REST API base URL.
+  // 功能：处理 Rest Base 相关逻辑。
   function Rest_Base() { return (Cfg().restUrl || '/wp-json/').replace(/\/+$/, '') + '/'; }
 
   window.EvaFields.backup = {
     props: ['field', 'modelValue'],
     emits: ['update:modelValue'],
-    // Purpose: Initialize component state and exposed reactive data.
+    // 功能：初始化组件响应式状态与对外数据。
     data: function () {
       return {
         // 页面数据状态：loading 控制骨架/加载态，error 用于展示请求或操作错误。
@@ -58,30 +58,30 @@
     computed: {
       // 小时 / 分钟选项由计算属性生成，避免在 data 里维护重复数组。
       hourOptions: function () { var a = []; for (var i = 0; i < 24; i++) { a.push(('0' + i).slice(-2)); } return a; },
-      // Purpose: Handle minute Options behavior.
+      // 功能：处理 minute Options 相关逻辑。
       minuteOptions: function () { var a = []; for (var i = 0; i < 60; i++) { a.push(('0' + i).slice(-2)); } return a; },
       // 自动备份时间拆分为两个 eva-select（小时 + 分钟）编辑，最终仍写回 settings.time。
       hour: {
-        // Purpose: Read or write the computed property state.
+        // 功能：读写计算属性对应的外部状态。
         get: function () { return ('0' + (parseInt((this.settings.time || '00:00').split(':')[0], 10) || 0)).slice(-2); },
-        // Purpose: Read or write the computed property state.
+        // 功能：读写计算属性对应的外部状态。
         set: function (v) { var m = (this.settings.time || '00:00').split(':')[1] || '00'; this.settings.time = v + ':' + m; }
       },
       minute: {
-        // Purpose: Read or write the computed property state.
+        // 功能：读写计算属性对应的外部状态。
         get: function () { return ('0' + (parseInt((this.settings.time || '00:00').split(':')[1], 10) || 0)).slice(-2); },
-        // Purpose: Read or write the computed property state.
+        // 功能：读写计算属性对应的外部状态。
         set: function (v) { var h = (this.settings.time || '00:00').split(':')[0] || '00'; this.settings.time = h + ':' + v; }
       },
       // 接口返回的 card 聚合统计，模板中的统计卡都从这里派生。
       card: function () { return (this.data && this.data.card) || {}; },
-      // Purpose: Handle latest behavior.
+      // 功能：处理 latest 相关逻辑。
       latest: function () { return this.card.latest || {}; },
-      // Purpose: Handle auto Card behavior.
+      // 功能：处理 auto Card 相关逻辑。
       autoCard: function () { return this.card.auto || {}; },
-      // Purpose: Handle available behavior.
+      // 功能：处理 available 相关逻辑。
       available: function () { return this.card.available || {}; },
-      // Purpose: Handle list behavior.
+      // 功能：处理 list 相关逻辑。
       list: function () { return (this.data && this.data.list) || []; },
       // 历史备份列表的展示增强：补充类型文案和备份内容标签（按当前语言翻译）。
       parsedList: function () {
@@ -106,19 +106,19 @@
           return okTab && okKey;
         });
       },
-      // Purpose: Handle storage behavior.
+      // 功能：处理 storage 相关逻辑。
       storage: function () { return this.card.storage || {}; },
-      // Purpose: Handle trend behavior.
+      // 功能：处理 trend 相关逻辑。
       trend: function () { return this.card.trend || []; },
-      // Purpose: Handle counts behavior.
+      // 功能：处理 counts 相关逻辑。
       counts: function () { return this.card.counts || {}; },
-      // Purpose: Handle health behavior.
+      // 功能：处理 health 相关逻辑。
       health: function () { return this.card.health || []; },
-      // Purpose: Handle queue behavior.
+      // 功能：处理 queue 相关逻辑。
       queue: function () { return this.card.queue || []; },
-      // Purpose: Handle activities behavior.
+      // 功能：处理 activities 相关逻辑。
       activities: function () { return this.card.activities || []; },
-      // Purpose: Handle latest Items Label behavior.
+      // 功能：处理 latest Items Label 相关逻辑。
       latestItemsLabel: function () {
         var self = this;
         var typeMap = { main: self.t('bk_theme'), nav: self.t('bk_t_nav'), widgets: self.t('bk_t_widgets'), customizer: self.t('bk_t_customizer') };
@@ -141,10 +141,10 @@
         var m = this.counts.manual || 0, a = this.counts.automatic || 0, total = m + a;
         return total ? Math.round(a / total * 100) : 0;
       },
-      // Purpose: Handle estimate behavior.
+      // 功能：处理 estimate 相关逻辑。
       estimate: function () { return this.card.estimate || {}; }
     },
-    // Purpose: Run component mount initialization.
+    // 功能：组件挂载后执行初始化和事件绑定。
     mounted: function () { this.fetchData(); },
     methods: {
       // 全局 i18n 代理：模板与逻辑统一用 this.t('key')；内部读 EvaI18nState.lang，切换语言自动重渲染。
@@ -159,7 +159,7 @@
         var m = { '备份服务状态': 'bk_h_service', '存储空间状态': 'bk_h_storage', '数据库连接': 'bk_h_db', '文件系统权限': 'bk_h_fs' };
         return m[v] ? this.t(m[v]) : v;
       },
-      // Purpose: Handle health Label behavior.
+      // 功能：处理 health Label 相关逻辑。
       healthLabel: function (v) {
         var m = { '正常': 'bk_h_normal', '良好': 'bk_good', '异常': 'bk_h_error', '警告': 'bk_h_warn' };
         return m[v] ? this.t(m[v]) : v;
@@ -231,7 +231,7 @@
           })
           .catch(function () { self.error = self.t('bk_req_fail'); });
       },
-      // Purpose: Handle clear Selected behavior.
+      // 功能：清空 clear Selected 相关状态。
       clearSelected: function () {
         this.pendingFile = null;
         this.selectedFile = { name: '', size: '' };

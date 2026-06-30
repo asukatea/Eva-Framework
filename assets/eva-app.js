@@ -29,7 +29,7 @@
   var cfg = boot.config || {};
 
   var App = {
-    // Purpose: Initialize component state and exposed reactive data.
+    // 功能：初始化组件响应式状态与对外数据。
     setup: function () {
       /*
        * 基础 UI 状态：
@@ -72,6 +72,17 @@
         first ? [{ id: first.id, label: first.label, icon: first.icon, closable: false }] : []
       );
       var activeTab = Vue.ref(first ? first.id : '');
+      var suppressDependencyAnimation = Vue.ref(false);
+
+      // 功能：切换页面/页签时临时关闭字段依赖动画，避免整页字段列表也被 GSAP 过渡。
+      function Suppress_Dependency_Animation() {
+        suppressDependencyAnimation.value = true;
+        Vue.nextTick(function () {
+          window.setTimeout(function () {
+            suppressDependencyAnimation.value = false;
+          }, 0);
+        });
+      }
 
       // 保存每个可展开一级菜单的展开状态，key 为菜单 id。
       var openMenus = Vue.reactive({});
@@ -100,14 +111,14 @@
       }
       // 顶部语言下拉的展开状态与选择。
       var langOpen = Vue.ref(false);
-      // Purpose: Select an editing language and close the menu.
+      // 功能：处理 Choose Lang 相关逻辑。
       function Choose_Lang(code) { evaI18nState.lang = code; langOpen.value = false; }
 
       // 界面文案翻译：统一挂到全局 window.EvaI18n，eva-app 自身与所有字段/库组件复用同一套。
       // t(key) 取框架词条；tv(v) 翻译「值」（多语言对象按当前语言取，普通字符串原样）。
       // 两者内部都读 window.EvaI18nState.lang（reactive）+ EvaFW.config.messages，故模板调用即随切换重渲染。
       window.EvaI18n = window.EvaI18n || {
-        // Purpose: Handle t behavior.
+        // 功能：处理 t 相关逻辑。
         t: function (key) {
           var m = (window.EvaFW && window.EvaFW.config && window.EvaFW.config.messages) || {};
           var lang = (window.EvaI18nState && window.EvaI18nState.lang) || 'zh';
@@ -116,7 +127,7 @@
           if (m.zh && m.zh[key] != null) { return m.zh[key]; }
           return key;
         },
-        // Purpose: Handle tv behavior.
+        // 功能：处理 tv 相关逻辑。
         tv: function (v) {
           var lang = (window.EvaI18nState && window.EvaI18nState.lang) || 'zh';
           if (v && typeof v === 'object' && !Array.isArray(v)) {
@@ -140,7 +151,8 @@
         var out = [];
         sections.forEach(function (s) {
           var sHit = hit(s.title);
-          (s.fields || []).forEach(function (f) {
+        (s.fields || []).forEach(function (f) {
+            if (!Field_Row_Show(f)) { return; }
             if (sHit || hit(f.title) || hit(f.desc)) {
               out.push({ id: f.id, sectionId: s.id, label: tv(f.title) || f.id, desc: tv(f.desc) || '', icon: s.icon, parent: tv(s.title) });
             }
@@ -148,7 +160,7 @@
         });
         return out;
       });
-      // Purpose: Open the command search panel and focus the input.
+      // 功能：打开 Open Search 相关界面或状态。
       function Open_Search() {
         searchOpen.value = true;
         searchQuery.value = '';
@@ -156,12 +168,13 @@
           if (searchInput.value && searchInput.value.focus) { searchInput.value.focus(); }
         });
       }
-      // Purpose: Close the command search panel.
+      // 功能：关闭 Close Search 相关界面或状态。
       function Close_Search() {
         searchOpen.value = false;
       }
-      // Purpose: Navigate to the section that contains a search result.
+      // 功能：处理 Goto Result 相关逻辑。
       function Goto_Result(r) {
+        Suppress_Dependency_Animation();
         Open_Menu(r.sectionId);
         if (active.value !== r.sectionId) {
           active.value = r.sectionId;
@@ -169,12 +182,12 @@
         }
         Close_Search();
       }
-      // Purpose: Open the first search result on Enter.
+      // 功能：处理 On Search Enter 相关逻辑。
       function On_Search_Enter() {
         var list = searchResults.value;
         if (list.length) { Goto_Result(list[0]); }
       }
-      // Purpose: Handle global Ctrl/Cmd+K and Escape shortcuts.
+      // 功能：处理 On Global Key 相关逻辑。
       function On_Global_Key(e) {
         if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) {
           e.preventDefault();
@@ -206,11 +219,11 @@
         return null;
       }
 
-      // Purpose: Check whether a menu item has children.
+      // 功能：判断 Has Children 状态。
       function Has_Children(m) {
         return !!(m.children && m.children.length);
       }
-      // Purpose: Read the expanded state for a menu item.
+      // 功能：判断 Is Open 状态。
       function Is_Open(id) {
         return !!openMenus[id];
       }
@@ -225,6 +238,9 @@
       function Open_Menu(id) {
         var m = Find_Menu_Item(id);
         if (!m) return;
+        if (active.value !== id || activeTab.value !== id) {
+          Suppress_Dependency_Animation();
+        }
         active.value = id;
         activeTab.value = id;
         if (!tabs.find(function (t) { return t.id === id; })) {
@@ -241,18 +257,22 @@
         }
       }
 
-      // Purpose: Activate an existing tab.
+      // 功能：处理 Select Tab 相关逻辑。
       function Select_Tab(id) {
+        if (active.value !== id || activeTab.value !== id) {
+          Suppress_Dependency_Animation();
+        }
         activeTab.value = id;
         active.value = id;
       }
 
-      // Purpose: Close a tab and select a fallback tab.
+      // 功能：关闭 Close Tab 相关界面或状态。
       function Close_Tab(id) {
         var i = tabs.findIndex(function (t) { return t.id === id; });
         if (i === -1 || !tabs[i].closable) return;
         tabs.splice(i, 1);
         if (activeTab.value === id && tabs.length) {
+          Suppress_Dependency_Animation();
           var last = tabs[tabs.length - 1];
           activeTab.value = last.id;
           active.value = last.id;
@@ -277,33 +297,205 @@
         return tabs.filter(function (t) { return t.closable; }).length;
       });
 
-      // Purpose: Toggle dark mode.
+      // 功能：切换 Toggle Dark 状态。
       function Toggle_Dark() {
         dark.value = !dark.value;
       }
-      // Purpose: Collapse or expand the sidebar.
+      // 功能：切换 Toggle Sidebar 状态。
       function Toggle_Sidebar() {
         sidebarCollapsed.value = !sidebarCollapsed.value;
       }
-      // Purpose: Open or close the user menu.
+      // 功能：切换 Toggle User 状态。
       function Toggle_User() {
         userOpen.value = !userOpen.value;
       }
-      // Purpose: Close the user menu.
+      // 功能：关闭 Close User 相关界面或状态。
       function Close_User() {
         userOpen.value = false;
       }
 
       // 设置抽屉
       var settingsOpen = Vue.ref(false);
-      // Purpose: Open or close the settings drawer.
+      // 功能：切换 Toggle Settings 状态。
       function Toggle_Settings() {
         settingsOpen.value = !settingsOpen.value;
       }
-      // Purpose: Close the settings drawer.
+      // 功能：关闭 Close Settings 相关界面或状态。
       function Close_Settings() {
         settingsOpen.value = false;
       }
+
+      var iconfontStorageKey = 'eva_fw_iconfont_svg_url';
+      var iconfontUrl = Vue.ref('');
+      var iconfontProjects = Vue.ref(['']);
+      var activeIconfontProject = Vue.ref(0);
+      var iconfontMsg = Vue.ref('');
+
+      // 功能：标准化阿里 Iconfont Symbol 脚本地址，仅允许 http(s) 或协议相对地址。
+      function Normalize_Iconfont_Url(url) {
+        url = String(url || '').trim();
+        if (!url) { return ''; }
+        if (url.indexOf('//') === 0) { return 'https:' + url; }
+        if (/^https?:\/\//i.test(url)) { return url; }
+        return '';
+      }
+
+      // 功能：解析一个或多个 Iconfont Symbol 地址，支持换行或逗号分隔。
+      function Parse_Iconfont_Urls(value) {
+        var seen = {};
+        return String(value || '').split(/[\n,]+/).map(Normalize_Iconfont_Url).filter(function (url) {
+          if (!url || seen[url]) { return false; }
+          seen[url] = true;
+          return true;
+        });
+      }
+
+      // 功能：把本地保存的多链接字符串转换为右抽屉项目 Tabs。
+      function Iconfont_Projects_From_Value(value) {
+        var raw = String(value || '').split(/[\n,]+/).map(function (item) { return item.trim(); }).filter(Boolean);
+        return raw.length ? raw : [''];
+      }
+
+      // 功能：同步 Iconfont 项目 Tabs 到旧的字符串存储格式。
+      function Sync_Iconfont_Url_From_Projects() {
+        iconfontUrl.value = iconfontProjects.value.join('\n').trim();
+      }
+
+      // 功能：切换当前 Iconfont 项目 tab。
+      function Select_Iconfont_Project(index) {
+        activeIconfontProject.value = index;
+      }
+
+      // 功能：新增一个 Iconfont 项目链接输入 tab。
+      function Add_Iconfont_Project() {
+        iconfontProjects.value.push('');
+        activeIconfontProject.value = iconfontProjects.value.length - 1;
+        Sync_Iconfont_Url_From_Projects();
+      }
+
+      // 功能：移除一个 Iconfont 项目 tab，至少保留一个输入项。
+      function Remove_Iconfont_Project(index) {
+        iconfontProjects.value.splice(index, 1);
+        if (!iconfontProjects.value.length) {
+          iconfontProjects.value.push('');
+        }
+        if (activeIconfontProject.value >= iconfontProjects.value.length) {
+          activeIconfontProject.value = iconfontProjects.value.length - 1;
+        }
+        Sync_Iconfont_Url_From_Projects();
+      }
+
+      // 功能：通知图标选择器刷新阿里 Iconfont symbol 列表。
+      function Dispatch_Iconfont_Loaded() {
+        var event;
+        if (typeof window.CustomEvent === 'function') {
+          event = new CustomEvent('eva:iconfont-loaded');
+        } else {
+          event = document.createEvent('CustomEvent');
+          event.initCustomEvent('eva:iconfont-loaded', false, false, {});
+        }
+        window.dispatchEvent(event);
+      }
+
+      // 功能：统计当前页面已注入的 SVG symbol 数量。
+      function Count_Iconfont_Symbols() {
+        return document.querySelectorAll('symbol[id]').length;
+      }
+
+      // 功能：动态加载单个阿里 Iconfont Symbol 脚本。
+      function Load_Iconfont_Script(url, index) {
+        url = Normalize_Iconfont_Url(url);
+        if (!url) { return Promise.resolve(false); }
+
+        return new Promise(function (resolve, reject) {
+          var script = document.createElement('script');
+          script.id = 'eva-iconfont-symbol-script-' + index;
+          script.setAttribute('data-eva-iconfont-symbol', '1');
+          script.src = url;
+          script.async = true;
+          script.onload = function () {
+            Dispatch_Iconfont_Loaded();
+            window.setTimeout(Dispatch_Iconfont_Loaded, 120);
+            window.setTimeout(Dispatch_Iconfont_Loaded, 360);
+            resolve(true);
+          };
+          script.onerror = function () {
+            reject(new Error('Iconfont load failed'));
+          };
+          document.head.appendChild(script);
+        });
+      }
+
+      // 功能：移除旧的 Iconfont Symbol 脚本标签，避免多次加载产生重复脚本。
+      function Clear_Iconfont_Scripts() {
+        document.querySelectorAll('script[data-eva-iconfont-symbol="1"]').forEach(function (script) {
+          if (script.parentNode) { script.parentNode.removeChild(script); }
+        });
+      }
+
+      // 功能：按顺序加载多个 Iconfont Symbol 地址。
+      function Load_Iconfont_Scripts(urls) {
+        Clear_Iconfont_Scripts();
+        var chain = Promise.resolve();
+        urls.forEach(function (url, index) {
+          chain = chain.then(function () { return Load_Iconfont_Script(url, index); });
+        });
+        return chain;
+      }
+
+      // 功能：读取本地保存的 Iconfont 地址并尝试加载。
+      function Init_Iconfont_Url() {
+        try {
+          iconfontUrl.value = window.localStorage ? (window.localStorage.getItem(iconfontStorageKey) || '') : '';
+        } catch (e) {
+          iconfontUrl.value = '';
+        }
+        if (/^http:\/\/at\.alicdn\.com\//i.test(iconfontUrl.value)) {
+          iconfontUrl.value = iconfontUrl.value.replace(/^http:\/\//i, 'https://');
+          try {
+            if (window.localStorage) { window.localStorage.setItem(iconfontStorageKey, iconfontUrl.value); }
+          } catch (e) {}
+        }
+        iconfontProjects.value = Iconfont_Projects_From_Value(iconfontUrl.value);
+        var urls = Parse_Iconfont_Urls(iconfontUrl.value);
+        if (urls.length) {
+          iconfontUrl.value = urls.join('\n');
+          iconfontProjects.value = urls.slice();
+          Load_Iconfont_Scripts(urls).catch(function () {});
+        }
+      }
+
+      // 功能：保存右抽屉输入的 Iconfont Symbol 地址并立即加载。
+      function Save_Iconfont_Url() {
+        Sync_Iconfont_Url_From_Projects();
+        var urls = Parse_Iconfont_Urls(iconfontUrl.value);
+        if (!urls.length) {
+          iconfontMsg.value = iconfontUrl.value ? t('iconfont_invalid') : t('iconfont_cleared');
+          try {
+            if (window.localStorage) { window.localStorage.removeItem(iconfontStorageKey); }
+          } catch (e) {}
+          Clear_Iconfont_Scripts();
+          return;
+        }
+        iconfontUrl.value = urls.join('\n');
+        try {
+          if (window.localStorage) { window.localStorage.setItem(iconfontStorageKey, iconfontUrl.value); }
+        } catch (e) {}
+        iconfontMsg.value = t('loading');
+        Load_Iconfont_Scripts(urls).then(function () {
+          window.setTimeout(function () {
+            var count = Count_Iconfont_Symbols();
+            iconfontMsg.value = count
+              ? t('iconfont_loaded').replace('%d', urls.length).replace('%d', count)
+              : t('iconfont_no_symbols');
+          }, 380);
+          window.setTimeout(function () { iconfontMsg.value = ''; }, 1800);
+        }).catch(function () {
+          iconfontMsg.value = t('load_failed');
+        });
+      }
+
+      Init_Iconfont_Url();
 
       // 主题色：选中后覆盖 --eva-primary 系列变量到根节点
       var accents = [
@@ -317,7 +509,7 @@
         { key: 'indigo', label: '靛紫', color: '#6366f1', c600: '#4f46e5', c050: '#eef0fe' },
       ];
       var accent = Vue.ref('coral');
-      // Purpose: Switch the admin accent color.
+      // 功能：更新 Set Accent 对应状态。
       function Set_Accent(a) {
         accent.value = a.key;
       }
@@ -335,8 +527,11 @@
       var isAdmin = !!cfg.isAdmin;
       var guideVisible = Vue.ref(cfg.guideVisible !== false);
 
-      // Purpose: Open the built-in Eva guide tab.
+      // 功能：打开 Open Guide 相关界面或状态。
       function Open_Guide() {
+        if (active.value !== 'eva-guide' || activeTab.value !== 'eva-guide') {
+          Suppress_Dependency_Animation();
+        }
         active.value = 'eva-guide';
         activeTab.value = 'eva-guide';
         if (!tabs.find(function (t) { return t.id === 'eva-guide'; })) {
@@ -344,7 +539,7 @@
         }
       }
 
-      // Purpose: Persist the global guide menu visibility setting.
+      // 功能：切换 Toggle Guide 状态。
       function Toggle_Guide() {
         if (!isAdmin) return;
         var next = !guideVisible.value;
@@ -365,7 +560,7 @@
 
       // 后台悬浮窗开关（仅管理员，全站生效）
       var floatingEnabled = Vue.ref(cfg.floatingEnabled !== false);
-      // Purpose: Persist the global floating admin panel setting.
+      // 功能：切换 Toggle Floating 状态。
       function Toggle_Floating() {
         if (!isAdmin) return;
         var next = !floatingEnabled.value;
@@ -384,7 +579,7 @@
         }).catch(function () { floatingEnabled.value = !next; });
       }
 
-      // Purpose: Prepare environment rows for the guide page.
+      // 功能：处理 Guide Environment 相关逻辑。
       function Guide_Environment() {
         var items = Array.isArray(cfg.guideEnvironment) ? cfg.guideEnvironment : [];
         if (!items.length) {
@@ -480,7 +675,7 @@
         resources: [
           { icon: 'ri-book-open-line', title: '官方文档', desc: '查看使用方式与 API 约定' },
           { icon: 'ri-github-line', title: '字段组件', desc: '按 Fields 拆分维护' },
-          { icon: 'ri-Refresh-line', title: '更新日志', desc: '跟踪框架迭代记录' },
+          { icon: 'ri-refresh-line', title: '更新日志', desc: '跟踪框架迭代记录' },
         ],
       };
       guide.groups = [
@@ -662,7 +857,7 @@
         },
       ];
 
-      // Purpose: Copy guide code examples and show copied state.
+      // 功能：处理 Copy Guide Code 相关逻辑。
       function Copy_Guide_Code(code) {
         if (!code || !navigator.clipboard) { return; }
         navigator.clipboard.writeText(code);
@@ -672,6 +867,8 @@
       var sections = cfg.sections || [];
       var optionId = cfg.optionId || '';
       var model = Vue.reactive(Object.assign({}, cfg.values || {}));
+      var dependencySources = cfg.dependencySources || {};
+      var fieldErrors = Vue.reactive({});
       // 补齐默认值：后端没保存过的字段，前端仍按 schema.default 显示初始值。
       sections.forEach(function (s) {
         (s.fields || []).forEach(function (f) {
@@ -689,7 +886,7 @@
       var currentGuideSections = Vue.computed(function () {
         return (currentGuideGroup.value && currentGuideGroup.value.sections) || [];
       });
-      // Purpose: Restore the form model from the saved snapshot.
+      // 功能：处理 Discard Changes 相关逻辑。
       function Discard_Changes() {
         var orig = {};
         try { orig = JSON.parse(savedSnapshot.value); } catch (e) {}
@@ -710,18 +907,18 @@
       var isFlush = Vue.computed(function () {
         var s = currentSection.value;
         if (!s || !s.fields) { return false; }
-        return s.fields.some(function (f) { return f.type === 'backup' || f.type === 'html'; });
+        return s.fields.some(function (f) { return f.type === 'backup' || (f.type === 'html' && !!f.flush); });
       });
 
-      // Purpose: Return a field default value or an empty string.
+      // 功能：处理 Field Default 相关逻辑。
       function Field_Default(f) { return (f.default !== undefined ? f.default : ''); }
-      // Purpose: Reset fields in the current section to defaults.
+      // 功能：重置 Reset Section 相关状态。
       function Reset_Section() {
         var s = currentSection.value;
         if (s && s.fields) { s.fields.forEach(function (f) { model[f.id] = Field_Default(f); }); }
         resetOpen.value = false;
       }
-      // Purpose: Reset all registered fields to defaults.
+      // 功能：重置 Reset All 相关状态。
       function Reset_All() {
         sections.forEach(function (s) {
           (s.fields || []).forEach(function (f) { model[f.id] = Field_Default(f); });
@@ -741,6 +938,275 @@
         return map[(f && f.width) || ''] || 'eva-col-12';
       }
 
+      // 功能：判断字段是否包含可显示的 HTML 辅助内容。
+      function Field_Has_Html(value) {
+        return value !== null && value !== undefined && String(value) !== '';
+      }
+
+      // 功能：读取字段级错误信息。
+      function Field_Error(f) {
+        if (!f || !f.id) { return ''; }
+        return fieldErrors[f.id] || f._error || '';
+      }
+
+      // 功能：清除指定字段的错误提示。
+      function Clear_Field_Error(id) {
+        if (id && fieldErrors[id]) {
+          delete fieldErrors[id];
+        }
+      }
+
+      // 功能：清空全部字段错误。
+      function Clear_Field_Errors() {
+        Object.keys(fieldErrors).forEach(function (key) { delete fieldErrors[key]; });
+      }
+
+      // 功能：保存失败时跳转到第一个字段错误。
+      function Focus_First_Field_Error(errors) {
+        var keys = Object.keys(errors || {});
+        if (!keys.length) { return; }
+        Vue.nextTick(function () {
+          var el = document.querySelector('[data-eva-field-id="' + keys[0] + '"]');
+          if (el && el.scrollIntoView) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        });
+      }
+
+      // 功能：按逗号字符串或数组生成依赖比较集合。
+      function Dependency_List(value) {
+        if (Array.isArray(value)) { return value; }
+        if (value === null || value === undefined) { return []; }
+        return String(value).split(',').map(function (item) { return item.trim(); });
+      }
+
+      // 功能：把依赖值转成布尔值，兼容 CSF 的 true/false 字符串。
+      function Dependency_Bool(value) {
+        if (value === true || value === 'true' || value === 1 || value === '1') { return true; }
+        if (value === false || value === 'false' || value === 0 || value === '0' || value === null || value === undefined || value === '') { return false; }
+        return null;
+      }
+
+      // 功能：归一化依赖等值比较时的实际值。
+      function Dependency_Compare_Value(value) {
+        var bool = Dependency_Bool(value);
+        if (bool !== null) { return bool ? 'true' : 'false'; }
+        if (Array.isArray(value)) { return value.map(Dependency_Compare_Value).join(','); }
+        if (value && typeof value === 'object') { return JSON.stringify(value); }
+        return String(value);
+      }
+
+      // 功能：判断依赖值是否为空。
+      function Dependency_Is_Empty(value) {
+        return value === null || value === undefined || value === '' || value === false || (Array.isArray(value) && !value.length);
+      }
+
+      // 功能：读取对象中的点号路径值。
+      function Dependency_Path_Value(source, path) {
+        if (!path || path === '__value') { return source; }
+        var current = source;
+        String(path).split('.').forEach(function (part) {
+          if (current === null || current === undefined || part === '') { current = undefined; return; }
+          current = current[part];
+        });
+        return current;
+      }
+
+      // 功能：读取依赖规则对应的数据源值。
+      function Dependency_Source_Value(rule) {
+        if (!rule) { return undefined; }
+        var source = rule.source || 'field';
+        if (source === 'option' || source === 'site_option') {
+          var group = dependencySources[source] || {};
+          var optionValues = group[rule.option] || {};
+          if (rule.key && Object.prototype.hasOwnProperty.call(optionValues, rule.key)) {
+            return optionValues[rule.key];
+          }
+          return Dependency_Path_Value(optionValues.__value, rule.key || '__value');
+        }
+        return model[rule.id];
+      }
+
+      // 功能：判断实际值是否命中依赖期望集合。
+      function Dependency_Contains_Any(actual, expected) {
+        var actuals = Dependency_List(actual).map(Dependency_Compare_Value);
+        var expects = Dependency_List(expected).map(Dependency_Compare_Value);
+        return expects.some(function (item) { return actuals.indexOf(item) !== -1; });
+      }
+
+      // 功能：执行单条依赖规则比较。
+      function Dependency_Match_Rule(rule) {
+        if (!rule) { return true; }
+        var actual = Dependency_Source_Value(rule);
+        var expected = rule.value;
+        var operator = rule.operator || '==';
+
+        if (operator === 'empty') { return Dependency_Is_Empty(actual); }
+        if (operator === 'not_empty' || operator === 'not-empty') { return !Dependency_Is_Empty(actual); }
+        if (operator === 'truthy') { return Dependency_Bool(actual) === true; }
+        if (operator === 'falsy') { return Dependency_Bool(actual) === false; }
+
+        if (operator === 'any' || operator === 'in' || operator === 'contains') {
+          return Dependency_Contains_Any(actual, expected);
+        }
+        if (operator === 'not_any' || operator === 'not-any' || operator === 'not_in' || operator === 'not-in' || operator === 'not_contains') {
+          return !Dependency_Contains_Any(actual, expected);
+        }
+
+        if (operator === '>' || operator === '>=' || operator === '<' || operator === '<=') {
+          var left = Number(actual);
+          var right = Number(expected);
+          if (Number.isNaN(left)) { left = 0; }
+          if (Number.isNaN(right)) { right = 0; }
+          if (operator === '>') { return left > right; }
+          if (operator === '>=') { return left >= right; }
+          if (operator === '<') { return left < right; }
+          return left <= right;
+        }
+
+        if (operator === '!=') {
+          return Dependency_Compare_Value(actual) !== Dependency_Compare_Value(expected);
+        }
+        return Dependency_Compare_Value(actual) === Dependency_Compare_Value(expected);
+      }
+
+      // 功能：执行一个依赖规则组，relation=or/any 时任一满足即可。
+      function Dependency_Match_Group(group) {
+        var rules = (group && Array.isArray(group.rules)) ? group.rules : [];
+        if (!rules.length) { return true; }
+        var relation = group.relation || 'and';
+        if (relation === 'or' || relation === 'any') {
+          return rules.some(Dependency_Match_Rule);
+        }
+        return rules.every(Dependency_Match_Rule);
+      }
+
+      // 功能：计算字段当前依赖状态。
+      function Field_State(f) {
+        var dependency = (f && f.eva_dependency) ? f.eva_dependency : {};
+        var visible = dependency.visible || null;
+        var visibleMatched = visible ? Dependency_Match_Group(visible) : true;
+        var visibleAction = visible ? (visible.action || 'hide') : 'hide';
+        var disabledMatched = dependency.disabled ? Dependency_Match_Group(dependency.disabled) : false;
+        var readonlyMatched = dependency.readonly ? Dependency_Match_Group(dependency.readonly) : false;
+
+        return {
+          hidden: !!(visible && !visibleMatched && visibleAction === 'hide'),
+          muted: !!(visible && !visibleMatched && visibleAction === 'visible'),
+          disabled: !!(disabledMatched || (visible && !visibleMatched && visibleAction === 'disabled')),
+          readonly: !!(readonlyMatched || (visible && !visibleMatched && visibleAction === 'readonly')),
+        };
+      }
+
+      // 功能：判断字段行是否显示。
+      function Field_Row_Show(f) {
+        return !Field_State(f).hidden;
+      }
+
+      // 功能：过滤出当前可显示字段，供 transition-group 做进入/离开动画。
+      function Visible_Fields(fields) {
+        return (fields || []).filter(Field_Row_Show);
+      }
+
+      // 功能：生成字段行 class，加入依赖状态样式。
+      function Field_Row_Class(f) {
+        var state = Field_State(f);
+        return [
+          Field_Col(f),
+          f && f.class ? f.class : '',
+          {
+            'is-dependency-muted': state.muted,
+            'is-dependency-disabled': state.disabled,
+            'is-dependency-readonly': state.readonly,
+            'has-error': !!Field_Error(f),
+          }
+        ];
+      }
+
+      // 功能：为字段组件合并依赖产生的 disabled/readonly 状态。
+      function Field_For_Render(f) {
+        var state = Field_State(f);
+        if (!state.disabled && !state.readonly) { return f; }
+        return Object.assign({}, f, {
+          disabled: state.disabled || f.disabled,
+          readonly: state.readonly || f.readonly,
+        });
+      }
+
+      var dependencyGsapPromise = null;
+      // 功能：按需加载 GSAP，依赖动画优先使用它，失败时交给 CSS 兜底。
+      function Ensure_Dependency_Gsap() {
+        if (window.gsap) { return Promise.resolve(window.gsap); }
+        if (dependencyGsapPromise) { return dependencyGsapPromise; }
+        dependencyGsapPromise = new Promise(function (resolve, reject) {
+          var script = document.createElement('script');
+          script.src = 'https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js';
+          script.async = true;
+          script.onload = function () { resolve(window.gsap); };
+          script.onerror = function () { reject(new Error('GSAP load failed')); };
+          document.head.appendChild(script);
+        });
+        return dependencyGsapPromise;
+      }
+
+      // 功能：清理依赖动画写入的内联样式，避免跳过动画时内容残留透明状态。
+      function Clear_Dependency_Animation_Styles(el) {
+        el.style.opacity = '';
+        el.style.visibility = '';
+        el.style.transform = '';
+      }
+
+      // 功能：依赖字段进入前设置初始状态，避免首帧闪烁。
+      function Dependency_Before_Enter(el) {
+        if (suppressDependencyAnimation.value) {
+          Clear_Dependency_Animation_Styles(el);
+          return;
+        }
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(-8px) scale(0.985)';
+      }
+
+      // 功能：依赖字段显示时执行展开动画。
+      function Dependency_Enter(el, done) {
+        if (suppressDependencyAnimation.value) {
+          Clear_Dependency_Animation_Styles(el);
+          done();
+          return;
+        }
+        Ensure_Dependency_Gsap().then(function (gsap) {
+          gsap.killTweensOf(el);
+          gsap.fromTo(el, {
+            autoAlpha: 0,
+            y: -8,
+            scale: 0.985,
+          }, {
+            autoAlpha: 1,
+            y: 0,
+            scale: 1,
+            duration: 0.24,
+            ease: 'power2.out',
+            clearProps: 'all',
+            onComplete: done,
+          });
+        }).catch(function () {
+          el.classList.add('eva-dependency-css-enter');
+          window.requestAnimationFrame(function () {
+            el.classList.add('is-active');
+            window.setTimeout(function () {
+              el.classList.remove('eva-dependency-css-enter', 'is-active');
+              done();
+            }, 260);
+          });
+        });
+      }
+
+      // 功能：依赖字段隐藏时执行收起动画。
+      function Dependency_Leave(el, done) {
+        if (window.gsap) { window.gsap.killTweensOf(el); }
+        Clear_Dependency_Animation_Styles(el);
+        done();
+      }
+
       var saving = Vue.ref(false);
       var saveMsg = Vue.ref('');
       // 保存设置页字段：通过 admin-ajax 调用 Data::ajax_save，后端按 schema 清洗未知字段。
@@ -748,6 +1214,7 @@
         if (saving.value) { return; }
         saving.value = true;
         saveMsg.value = '保存中…';
+        Clear_Field_Errors();
         var url = cfg.ajaxUrl || ((boot.adminUrl || '') + 'admin-ajax.php');
         var body = 'action=eva_fw_save_options&nonce=' + encodeURIComponent(cfg.nonce || '') +
           '&option_id=' + encodeURIComponent(optionId) +
@@ -764,7 +1231,13 @@
             if (res.data && res.data.values) { Object.assign(model, res.data.values); }
             savedSnapshot.value = JSON.stringify(model);
           } else {
-            saveMsg.value = (res && res.data && res.data.msg) ? ('保存失败: ' + res.data.msg) : '保存失败';
+            if (res && res.data && res.data.errors) {
+              Object.assign(fieldErrors, res.data.errors);
+              Focus_First_Field_Error(res.data.errors);
+              saveMsg.value = '请检查字段错误';
+            } else {
+              saveMsg.value = (res && res.data && res.data.msg) ? ('保存失败: ' + res.data.msg) : '保存失败';
+            }
           }
           setTimeout(function () { saveMsg.value = ''; }, 2500);
         }).catch(function () {
@@ -819,6 +1292,14 @@
         settingsOpen: settingsOpen,
         Toggle_Settings: Toggle_Settings,
         Close_Settings: Close_Settings,
+        iconfontUrl: iconfontUrl,
+        iconfontProjects: iconfontProjects,
+        activeIconfontProject: activeIconfontProject,
+        iconfontMsg: iconfontMsg,
+        Select_Iconfont_Project: Select_Iconfont_Project,
+        Add_Iconfont_Project: Add_Iconfont_Project,
+        Remove_Iconfont_Project: Remove_Iconfont_Project,
+        Save_Iconfont_Url: Save_Iconfont_Url,
         accents: accents,
         accent: accent,
         Set_Accent: Set_Accent,
@@ -836,6 +1317,7 @@
         Copy_Guide_Code: Copy_Guide_Code,
         sections: sections,
         model: model,
+        fieldErrors: fieldErrors,
         currentSection: currentSection,
         isFlush: isFlush,
         saving: saving,
@@ -847,6 +1329,16 @@
         Reset_Section: Reset_Section,
         Reset_All: Reset_All,
         Field_Col: Field_Col,
+        Field_Row_Show: Field_Row_Show,
+        Visible_Fields: Visible_Fields,
+        Field_Row_Class: Field_Row_Class,
+        Field_For_Render: Field_For_Render,
+        Field_Has_Html: Field_Has_Html,
+        Field_Error: Field_Error,
+        Clear_Field_Error: Clear_Field_Error,
+        Dependency_Before_Enter: Dependency_Before_Enter,
+        Dependency_Enter: Dependency_Enter,
+        Dependency_Leave: Dependency_Leave,
       };
     },
     template: [
@@ -943,7 +1435,7 @@
       '        </div>',
       '      </div>',
       '      <div class="eva-tabs-right">',
-      '        <button class="eva-tbtn" :title="t(\'refresh_page\')" @click="Refresh"><i class="ri-Refresh-line"></i></button>',
+      '        <button class="eva-tbtn" :title="t(\'refresh_page\')" @click="Refresh"><i class="ri-refresh-line"></i></button>',
       '        <button v-if="closableCount" class="eva-tbtn" :title="t(\'close_other_tabs\')" @click="Close_Other_Tabs"><i class="ri-close-circle-line"></i></button>',
       '        <div class="eva-crumb">',
       '          <i class="ri-home-4-line"></i><i class="eva-crumb-sep ri-arrow-right-s-line"></i>',
@@ -1017,12 +1509,16 @@
       '        <footer class="eva-guide-foot"><span>EVA Framework v{{ guide.version || \'1.0.0\' }}</span><span>轻量 / 现代 / 好看</span></footer>',
       '      </div>',
       '      <div v-else-if="currentSection" class="eva-form" :class="{ \'eva-form--flush\': isFlush }">',
-      '        <div class="eva-form-card">',
-      '          <div v-for="f in currentSection.fields" :key="f.id" class="eva-field-row" :class="Field_Col(f)">',
-      '            <div class="eva-field-meta"><span class="eva-field-title">{{ tv(f.title) }}</span><span v-if="tv(f.desc)" class="eva-field-desc">{{ tv(f.desc) }}</span></div>',
-      '            <div class="eva-field-control"><eva-field :field="f" v-model="model[f.id]"></eva-field></div>',
+      '        <transition-group name="eva-dependency" tag="div" class="eva-form-card" @before-enter="Dependency_Before_Enter" @enter="Dependency_Enter" @leave="Dependency_Leave">',
+      '          <div v-for="f in Visible_Fields(currentSection.fields)" :key="f.id" class="eva-field-row" :class="Field_Row_Class(f)" :data-eva-field-id="f.id">',
+      '            <div class="eva-field-meta"><span class="eva-field-title">{{ tv(f.title) }}<span v-if="tv(f.help)" class="eva-field-help" tabindex="0"><i class="ri-question-line"></i><em>{{ tv(f.help) }}</em></span></span><span v-if="tv(f.subtitle)" class="eva-field-subtitle">{{ tv(f.subtitle) }}</span><span v-if="tv(f.desc)" class="eva-field-desc">{{ tv(f.desc) }}</span></div>',
+      '            <div v-if="Field_Has_Html(f.before)" class="eva-field-before" v-html="f.before"></div>',
+      '            <div v-if="Field_Has_Html(f.content)" class="eva-field-content" v-html="f.content"></div>',
+      '            <div class="eva-field-control"><eva-field :field="Field_For_Render(f)" v-model="model[f.id]" @update:model-value="Clear_Field_Error(f.id)"></eva-field></div>',
+      '            <div v-if="Field_Has_Html(f.after)" class="eva-field-after" v-html="f.after"></div>',
+      '            <div v-if="Field_Error(f)" class="eva-field-error"><i class="ri-error-warning-line"></i><span>{{ Field_Error(f) }}</span></div>',
       '          </div>',
-      '        </div>',
+      '        </transition-group>',
       '        <div class="eva-savedock" v-show="isDirty || saveMsg">',
       '          <button type="button" class="eva-savefab" :disabled="saving || !isDirty" @click="Save_Options"><i class="ri-save-3-line"></i><span>{{ saveMsg || t(\'save\') }}</span></button>',
       '          <div class="eva-reset-wrap" @mouseleave="resetOpen = false">',
@@ -1080,6 +1576,24 @@
       '        </div>',
       '      </div>',
       '      <div class="eva-set-section">',
+      '        <p class="eva-set-title">{{ t(\'icon_library\') }}</p>',
+      '        <div class="eva-set-row eva-set-row--stack">',
+      '          <div class="eva-set-label"><i class="ri-symbol"></i><span>{{ t(\'iconfont_svg\') }}</span></div>',
+      '          <div class="eva-iconfont-tabs">',
+      '            <button v-for="(url, index) in iconfontProjects" :key="index" type="button" class="eva-iconfont-tab" :class="{ \'is-active\': activeIconfontProject === index }" @click="Select_Iconfont_Project(index)">',
+      '              <i class="ri-links-line"></i><span>{{ t(\'iconfont_project\') }} {{ index + 1 }}</span>',
+      '              <i v-if="iconfontProjects.length > 1" class="ri-close-line eva-iconfont-remove" @click.stop="Remove_Iconfont_Project(index)"></i>',
+      '            </button>',
+      '            <button type="button" class="eva-iconfont-add" :title="t(\'iconfont_add_project\')" @click="Add_Iconfont_Project"><i class="ri-add-line"></i></button>',
+      '          </div>',
+      '          <div class="eva-set-input-row">',
+      '            <input class="eva-set-input" v-model="iconfontProjects[activeIconfontProject]" type="url" :placeholder="t(\'iconfont_placeholder\')">',
+      '            <button type="button" class="eva-set-mini-btn" @click="Save_Iconfont_Url">{{ t(\'load\') }}</button>',
+      '          </div>',
+      '          <p class="eva-set-hint">{{ iconfontMsg || t(\'iconfont_hint\') }}</p>',
+      '        </div>',
+      '      </div>',
+      '      <div class="eva-set-section">',
       '        <p class="eva-set-title">{{ t(\'theme_color\') }}</p>',
       '        <div class="eva-accents">',
       '          <button v-for="a in accents" :key="a.key" type="button" class="eva-accent" :class="{ \'is-active\': accent === a.key }" :style="{ background: a.color }" :title="a.label" @click="Set_Accent(a)"></button>',
@@ -1122,7 +1636,7 @@
       inheritAttrs: false,
       props: { icon: { type: String, default: '' } },
       computed: {
-        // Purpose: Handle kind behavior.
+        // 功能：处理 kind 相关逻辑。
         kind: function () {
           var s = (this.icon || '').trim();
           if (!s) { return 'empty'; }
@@ -1162,7 +1676,7 @@
       props: ['field', 'modelValue'],
       emits: ['update:modelValue'],
       computed: {
-        // Purpose: Handle comp behavior.
+        // 功能：处理 comp 相关逻辑。
         comp: function () {
           var reg = window.EvaFields || {};
           return reg[this.field && this.field.type] || reg.text || null;

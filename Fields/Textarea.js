@@ -16,7 +16,10 @@
     emits: ['update:modelValue'],
     template:
       '<textarea class="eva-f-input eva-f-textarea" rows="4" :value="modelValue"' +
+      ' v-bind="field.attributes || {}"' +
       ' :placeholder="field.placeholder || \'\'"' +
+      ' :disabled="!!field.disabled"' +
+      ' :readonly="!!field.readonly"' +
       ' @input="$emit(\'update:modelValue\', $event.target.value)"></textarea>'
   };
 })();
